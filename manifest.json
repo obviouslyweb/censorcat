@@ -3,7 +3,7 @@
     "name": "CensorCAT",
     "version": "0.1.0",
 
-    "description": "Dynamic censoring extension for the Firefox Browser. Browse the internet your way. Currently in active development.",
+    "description": "Dynamic censoring extension for the Firefox Browser. Currently in active development.",
     "homepage_url": "https://github.com/obviouslyweb/censorcat",
     "icons": {
         "16": "icons/icon-16.png",
