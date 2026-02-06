@@ -1,4 +1,4 @@
-![CensorCAT logo](icons\icon-512.png)
+![CensorCAT logo](icons/icon-512.png)
 
 # censorcat - *Censor Curation And Text-filtering tool*
 Dynamic censoring extension for the Firefox Browser.
