@@ -1,8 +1,8 @@
 // eslint-disable-next-line no-unused-vars
 const CENSORED_PHRASES = [
     // Format: [ "phrase", case-sensitive ]
-    [ "Pressure", true ],
+    [ "Discord", true ],
     [ "roblox", false ],
-    [ "Discord", false ],
+    [ "BYU-Idaho", false ],
     // All of these are temporary for testing
 ];
