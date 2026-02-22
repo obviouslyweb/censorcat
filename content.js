@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+
 // Handle special characters in regex if needed
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -39,4 +41,32 @@ function walkThroughHTMLNode(node) {
     }
 }
 
-walkThroughHTMLNode(document.body);
+// Check if censoring should occur
+function checkCensor() {
+    // Get page URL
+    const hostname = window.location.hostname;
+    const fullPath = window.location.hostname + window.location.pathname;
+
+    // Check if page should be ignored
+    let ignored = IGNORED_SITES.some(([site, wholeDomain]) => {
+        if (wholeDomain) {
+            // Match any page under the domain
+            return hostname === site || hostname.endsWith("." + site);
+        } else {
+            // Match only the specific path
+            return fullPath.startsWith(site);
+        }
+    });
+
+    // Check if user manually disabled censoring, overrides page check
+    if (DISABLE_CENSOR) {
+        ignored = true;
+    }
+
+    // Only run if ignored is true
+    if (!ignored) {
+        walkThroughHTMLNode(document.body);
+    }
+}
+
+checkCensor();
