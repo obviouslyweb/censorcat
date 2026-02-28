@@ -9,7 +9,6 @@ function escapeRegExp(string) {
 function censorFromList(text, censorChar = "*") {
     let result = text;
 
-    // eslint-disable-next-line no-undef
     CENSORED_PHRASES.forEach(([word, caseSensitive]) => {
         // Determine case-sensitive flag if needed
         const flags = caseSensitive ? "g" : "gi";
@@ -63,10 +62,20 @@ function checkCensor() {
         ignored = true;
     }
 
-    // Only run if ignored is true
+    // Only run if page should not be ignored
     if (!ignored) {
         walkThroughHTMLNode(document.body);
+        censorStatus = true;
     }
 }
 
+let censorStatus = false;
 checkCensor();
+
+// Allow popup to query whether censoring ran on this page
+browser.runtime.onMessage.addListener((message) => {
+    if (message && message.type === "GET_CENSOR_STATUS") {
+        return Promise.resolve({ enabled: censorStatus });
+    }
+    return undefined;
+});

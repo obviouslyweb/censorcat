@@ -1,0 +1,18 @@
+body {
+    color: rgb(0, 0, 0);
+    font-weight: 700;
+    font-family:'Courier New', Courier, monospace;
+}
+
+.enabled {
+    color: green;
+}
+
+.disabled {
+    color: red;
+}
+
+.waiting {
+    font-style: italic;
+    opacity: 75%;
+}
