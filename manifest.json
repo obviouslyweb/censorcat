@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "CensorCAT",
-    "version": "0.3.0",
+    "version": "0.4.0",
 
     "description": "Dynamic censoring extension for the Firefox Browser.",
     "homepage_url": "https://github.com/obviouslyweb/censorcat",
@@ -14,10 +14,14 @@
         "512": "icons/icon-512.png"
     },
 
+    "permissions": [
+        "storage"
+    ],
+
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
-            "js": ["user_list.js", "content.js"],
+            "js": ["defaults.js", "storage.js", "censor.js"],
             "run_at": "document_idle"
         }
     ],
@@ -29,6 +33,6 @@
             "48": "icons/icon-48.png"
         },
         "default_title": "CensorCAT",
-        "default_popup": "popup/main.html"
+        "default_popup": "popup/home.html"
     }
 }

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Menu - CensorCAT</title>
+    <link rel="stylesheet" href="styles/core.css">
+    <script defer src="../defaults.js"></script>
+    <script defer src="../storage.js"></script>
+    <script defer src="js/home.js"></script>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <header>
+        <nav>
+            <button id="nav-home" type="button">Home</button>
+            <button id="nav-words" type="button">Words</button>
+            <button id="nav-omit" type="button">Omit</button>
+            <button id="nav-info" type="button">Info</button>
+        </nav>
+    </header>
+
+    <!-- Page content -->
+    <div class="core">
+
+        <h1 class="home-sitelink">Site link will be imported here</h1>
+        <div class="home-status">
+            <h2 class="home-status-focus">Censoring Loading...</h2>
+            <p class="home-status-msg"></p>
+        </div>
+
+        <section class="card">
+            <h2>Censoring Mode</h2>
+            <p>Change the way that censored content is displayed.</p>
+            <div class="mode-options is-loading">
+                <div class="mode-option">
+                    <input type="radio" id="mode-0" name="censor_mode" value="0">
+                    <label for="mode-0">No letters</label>
+                </div>
+                <div class="mode-option">
+                    <input type="radio" id="mode-1" name="censor_mode" value="1">
+                    <label for="mode-1">First letter only</label>
+                </div>
+                <div class="mode-option">
+                    <input type="radio" id="mode-2" name="censor_mode" value="2">
+                    <label for="mode-2">First & last letter</label>
+                </div>
+                <div class="mode-option">
+                    <input type="radio" id="mode-3" name="censor_mode" value="3">
+                    <label for="mode-3">Substitute phrase</label>
+                </div>
+            </div>
+            <div class="mode-custom">
+                <div id="char-row">
+                    <p>Replace letters with this character: </p>
+                    <input type="text" id="char" maxlength="1">
+                </div>
+                <div id="sub-row">
+                    <p>Replace censored elements with this phrase:</p>
+                    <input type="text" id="censor-phrase">
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Disable Censoring</h2>
+            <p>Disables all censoring features on page load.</p>
+            <label class="switch">
+                <input id="disable-censor-toggle" type="checkbox">
+                <span class="slider round"></span>
+            </label>
+        </section>
+
+        <section class="card dev-card">
+            <h2>[DEBUG] Local Storage</h2>
+            <p>Live update of local storage.</p>
+            <button id="dev-reset-defaults" type="button">Reset from defaults.js</button>
+            <pre id="dev-storage-data">{}</pre>
+        </section>
+
+    </div>
+
+    <!-- Logo & dev details if needed -->
+    <footer>
+        <img src="/icons/censorcat-logo.png">
+    </footer>
+
+</body>
+
+</html>
