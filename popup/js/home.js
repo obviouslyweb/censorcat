@@ -424,7 +424,7 @@ async function initializeUi() {
 
 initializeUi();
 
-// Keep UI and dev dump in sync if settings change externally
+// Keep UI in sync if settings change externally
 browser.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local" || !changes[STORAGE_KEY]) {
         return;

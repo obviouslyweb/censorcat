@@ -8,7 +8,8 @@ const DISABLE_CENSOR = false;
 // Default phrases to censor
 const CENSORED_PHRASES = [
     // Format: [ "phrase", case-sensitive, regex ]
-    [ "halo", false, false ]
+    [ "Tutorials", false, false ],
+    [ "certificates", false, false ]
 ];
 
 // Default replacement char & substitute phrase
@@ -24,6 +25,5 @@ const CENSOR_MODE = 0;
 // omit list for sites to ignore
 const IGNORED_SITES = [
     // Format: [ "site.url", censor all pages under domain ]
-    [ "wikipedia.org", true ],
-    [ "roblox.com/home", false ]
+    [ "wikipedia.org", true ]
 ];
