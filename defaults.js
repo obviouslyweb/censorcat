@@ -9,7 +9,10 @@ const DISABLE_CENSOR = false;
 const CENSORED_PHRASES = [
     // Format: [ "phrase", case-sensitive, regex ]
     [ "Tutorial", false, false ],
-    [ "certificates", false, false ]
+    [ "testing", false, false ],
+    [ "certificates", false, false ],
+    [ "woahthatscool", false, false ],
+    [ "1989pt2byhydelicisgood", false, false ]
 ];
 
 // Default replacement char & substitute phrase

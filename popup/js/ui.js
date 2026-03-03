@@ -17,7 +17,44 @@ async function persistSettings(settings) {
         uiSettings = normalizeSettings(settings);
     }
     renderDevStorage(uiSettings);
+    setWordDetails();
 }
+
+
+// ------------------------------------------------------------
+// SWITCH PAGE LOGIC
+// ------------------------------------------------------------
+
+function hideAllPages() {
+    document.querySelector("#view-home").classList.add("hidden");
+    document.querySelector("#view-words").classList.add("hidden");
+    document.querySelector("#view-omit").classList.add("hidden");
+    document.querySelector("#view-info").classList.add("hidden");
+}
+
+// Show home page
+document.querySelector("#nav-home").addEventListener("click", () => {
+    hideAllPages();
+    document.querySelector("#view-home").classList.remove("hidden");
+});
+
+// Show words page
+document.querySelector("#nav-words").addEventListener("click", () => {
+    hideAllPages();
+    document.querySelector("#view-words").classList.remove("hidden");
+});
+
+// Show omit list page
+document.querySelector("#nav-omit").addEventListener("click", () => {
+    hideAllPages();
+    document.querySelector("#view-omit").classList.remove("hidden");
+});
+
+// Show info page
+document.querySelector("#nav-info").addEventListener("click", () => {
+    hideAllPages();
+    document.querySelector("#view-info").classList.remove("hidden");
+});
 
 // ------------------------------------------------------------
 // STATUS & SITE LINK LOGIC
@@ -55,6 +92,73 @@ function setStatus(statusType, heading, message, showPendingNotice = false) {
         noticeEl.textContent = "Settings changed after this page was censored. Reload this page to apply them.";
         messageEl.appendChild(noticeEl);
     }
+}
+
+function maskPhraseForDisplay(text) {
+    const s = String(text || "");
+    const len = s.length;
+    if (len === 0) return "—";
+    if (len === 1) return s;
+    return s[0] + "*".repeat(len - 2) + s[len - 1];
+}
+
+function setWordDetails() {
+    const count = Array.isArray(uiSettings.censoredPhrases) ? uiSettings.censoredPhrases.length : 0;
+    const wordsStatusElement = document.getElementById("words-status");
+    if (wordsStatusElement) {
+        wordsStatusElement.innerHTML = `Currently censoring <strong>${count}</strong> words/phrases.`;
+    }
+
+    const wordListEl = document.getElementById("word-list");
+    if (!wordListEl) {
+        return;
+    }
+    wordListEl.textContent = "";
+
+    const phrases = Array.isArray(uiSettings.censoredPhrases) ? uiSettings.censoredPhrases : [];
+    phrases.forEach((entry, index) => {
+        const [phraseText, caseSensitive, isRegex] = Array.isArray(entry)
+            ? entry
+            : [String(entry || ""), false, false];
+
+        const item = document.createElement("div");
+        item.className = "word-item";
+
+        const p = document.createElement("p");
+        p.textContent = maskPhraseForDisplay(phraseText);
+        item.appendChild(p);
+
+        const phraseRight = document.createElement("div");
+        phraseRight.className = "phrase-right";
+
+        if (caseSensitive) {
+            const caseIcon = document.createElement("img");
+            caseIcon.src = "#";
+            caseIcon.alt = "Case-sensitive icon";
+            phraseRight.appendChild(caseIcon);
+        }
+        if (isRegex) {
+            const regexIcon = document.createElement("img");
+            regexIcon.src = "#";
+            regexIcon.alt = "REGEX pattern icon";
+            phraseRight.appendChild(regexIcon);
+        }
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "remove-phrase";
+        removeBtn.type = "button";
+        removeBtn.textContent = "X";
+        removeBtn.addEventListener("click", () => {
+            if (confirm("Remove this phrase from the censor list?")) {
+                uiSettings.censoredPhrases.splice(index, 1);
+                persistSettings(uiSettings);
+            }
+        });
+        phraseRight.appendChild(removeBtn);
+
+        item.appendChild(phraseRight);
+        wordListEl.appendChild(item);
+    });
 }
 
 // Render site label and style unavailable state
@@ -325,21 +429,6 @@ function scheduleRefresh() {
     }, 700);
 }
 
-// Temporary nav handlers for non-implemented pages
-function wireComingSoonNav() {
-    const comingSoonButtons = [
-        document.querySelector("#nav-words"),
-        document.querySelector("#nav-omit"),
-        document.querySelector("#nav-info")
-    ].filter(Boolean);
-
-    comingSoonButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-            alert("Functionality coming soon.");
-        });
-    });
-}
-
 // Overwrite storage with defaults for testing
 // NOTE: This was going to be dev only but i kinda like it
 // Might reformat to use in info if needs be later on
@@ -406,6 +495,50 @@ function wireSettingsControls() {
     }
 }
 
+// Add-to-censor form: submit new phrase, enforce case-sensitive vs regex mutual exclusivity
+function wireAddCensorForm() {
+    const addPhraseInput = document.querySelector("#add-phrase");
+    const caseIndicator = document.querySelector("#case-indicator");
+    const regexIndicator = document.querySelector("#regex-indicator");
+    const submitBtn = document.querySelector("#censor-phrase-submit");
+
+    if (!addPhraseInput || !caseIndicator || !regexIndicator || !submitBtn) {
+        return;
+    }
+
+    // Enforce mutual exclusivity: case-sensitive and regex cannot both be checked
+    function enforceMutualExclusivity(justChecked) {
+        if (caseIndicator.checked && regexIndicator.checked) {
+            justChecked.checked = false;
+        }
+    }
+    caseIndicator.addEventListener("change", () => enforceMutualExclusivity(regexIndicator));
+    regexIndicator.addEventListener("change", () => enforceMutualExclusivity(caseIndicator));
+
+    submitBtn.addEventListener("click", async () => {
+        const phrase = (addPhraseInput.value || "").trim();
+        if (phrase.length === 0) {
+            alert("Please enter a word or phrase to censor.");
+            return;
+        }
+        if (caseIndicator.checked && regexIndicator.checked) {
+            alert("Cannot use both case-sensitive and REGEX at the same time. Please uncheck one.");
+            return;
+        }
+
+        const entry = [phrase, caseIndicator.checked, regexIndicator.checked];
+        if (!Array.isArray(uiSettings.censoredPhrases)) {
+            uiSettings.censoredPhrases = [];
+        }
+        uiSettings.censoredPhrases.push(entry);
+        await persistSettings(uiSettings);
+
+        addPhraseInput.value = "";
+        caseIndicator.checked = false;
+        regexIndicator.checked = false;
+    });
+}
+
 // Popup boot sequence
 async function initializeUi() {
     let loadedSettings = getDefault();
@@ -416,9 +549,10 @@ async function initializeUi() {
     }
     applySettingsToUi(loadedSettings);
     renderDevStorage(loadedSettings);
+    setWordDetails();
     wireSettingsControls();
+    wireAddCensorForm();
     wireDevControls();
-    wireComingSoonNav();
     refreshStatus();
 }
 
@@ -433,6 +567,7 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     const fallback = getDefault();
     applySettingsToUi(nextValue || fallback);
     renderDevStorage(nextValue || fallback);
+    setWordDetails();
     refreshStatus();
 });
 

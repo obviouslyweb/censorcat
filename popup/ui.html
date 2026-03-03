@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Menu - CensorCAT</title>
+    <link rel="stylesheet" href="styles/core.css">
+    <script defer src="../defaults.js"></script>
+    <script defer src="../storage.js"></script>
+    <script defer src="js/ui.js"></script>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <header>
+        <nav>
+            <button id="nav-home" type="button">Home</button>
+            <button id="nav-words" type="button">Words</button>
+            <button id="nav-omit" type="button">Omit</button>
+            <button id="nav-info" type="button">Info</button>
+        </nav>
+    </header>
+
+    <!-- Page content -->
+    <div class="core">
+
+        <!-- HOME SEGMENT -->
+        <div id="view-home">
+            <h1 class="home-sitelink">Site link will be imported here</h1>
+            <div class="home-status">
+                <h2 class="home-status-focus">Censoring Loading...</h2>
+                <p class="home-status-msg"></p>
+            </div>
+
+            <section class="card">
+                <h2>Censoring Mode</h2>
+                <p>Change the way that censored content is displayed.</p>
+                <div class="mode-options is-loading">
+                    <div class="mode-option">
+                        <input type="radio" id="mode-0" name="censor_mode" value="0">
+                        <label for="mode-0">No letters</label>
+                    </div>
+                    <div class="mode-option">
+                        <input type="radio" id="mode-1" name="censor_mode" value="1">
+                        <label for="mode-1">First letter only</label>
+                    </div>
+                    <div class="mode-option">
+                        <input type="radio" id="mode-2" name="censor_mode" value="2">
+                        <label for="mode-2">First & last letter</label>
+                    </div>
+                    <div class="mode-option">
+                        <input type="radio" id="mode-3" name="censor_mode" value="3">
+                        <label for="mode-3">Substitute phrase</label>
+                    </div>
+                </div>
+                <div class="mode-custom">
+                    <div id="char-row">
+                        <p>Replace letters with this character: </p>
+                        <input type="text" id="char" maxlength="1">
+                    </div>
+                    <div id="sub-row">
+                        <p>Replace censored elements with this phrase:</p>
+                        <input type="text" id="censor-phrase">
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Disable Censoring</h2>
+                <p>Disables all censoring features on page load.</p>
+                <label class="switch">
+                    <input id="disable-censor-toggle" type="checkbox">
+                    <span class="slider round"></span>
+                </label>
+            </section>
+        </div>
+
+        <!-- WORDS LIST SEGMENT -->
+        <div id="view-words" class="hidden">
+
+             <p id="words-status">Calculating total censored items...</p>
+             <div id="word-list" class="scroll">
+                <!-- Dynamically add items in here -->
+
+                <!-- <div class="phrase-item">
+                    <p class="phrase-text">C****r</p>
+                    <div class="phrase-right">
+                        <button class="remove-phrase">X</button>
+                    </div>
+                </div> -->
+
+                <!-- Dynamically add items in here -->
+             </div>
+
+            <section class="card">
+                <h2>Add to censor</h2>
+                <input type="text" id="add-phrase" placeholder="Type what you want to remove...">
+                <div id="add-censor-op1">
+                    <input name="case-indicator" type="checkbox" id="case-indicator">
+                    <label for="case-indicator">Treat as case-sensitive</label>
+                    <p>If enabled, this will only censor phrases that match the exact case format of your entry. If that doesn't matter, leave this box unchecked.</p>
+                </div>
+                <div id="add-censor-op2">
+                    <input name="regex-indicator" type="checkbox" id="regex-indicator">
+                    <label for="regex-indicator">This is a REGEX pattern</label>
+                    <img src="#" alt="REGEX pattern icon">
+                    <p>If enabled, this will treat the given entry as a <bold>regular expression</bold> and censor accordingly. If you don't know what that is, then don't tick this box or it might cause some strange effects!</p>
+                </div>
+                <button id="censor-phrase-submit">Censor it!</button>
+            </section>
+
+        </div>
+
+         <!-- OMIT LIST SEGMENT -->
+        <div id="view-omit" class="hidden">
+            <h2>COMING SOON</h2>
+            <p>This page will feature the ability to add and remove webpages from the omit list. Please stay tuned for further updates!</p>
+        </div>
+
+         <!-- INFO SEGMENT -->
+        <div id="view-info" class="hidden">
+            <p>CensorCAT is an open-source censoring extension for Mozilla Firefox, developed by obviouslyweb.</p>
+
+            <a class="button" href="https://github.com/obviouslyweb/censorcat">Visit GitHub Repository</a>
+
+            <section class="card dev-card">
+                <h2>[DEBUG] Local Storage</h2>
+                <p>Live update of local storage.</p>
+                <button id="dev-reset-defaults" type="button">Reset from defaults.js</button>
+                <pre id="dev-storage-data">{}</pre>
+            </section>
+            
+        </div>
+
+    </div>
+
+    <!-- Logo & dev details if needed -->
+    <footer>
+        <img src="/icons/censorcat-logo.png">
+    </footer>
+
+</body>
+
+</html>

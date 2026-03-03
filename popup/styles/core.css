@@ -38,6 +38,10 @@ body {
     padding: calc(var(--padding) * 2);
 }
 
+.hidden {
+    display: none;
+}
+
 header {
     border-bottom: 3px solid rgba(255, 255, 255, 0.45);
     padding-bottom: 14px;
@@ -52,6 +56,7 @@ nav {
     z-index: 1;
 
     button {
+        z-index: 1;
         height: 30px;
         text-align: center;
         border-radius: 10px;
@@ -82,6 +87,45 @@ nav {
     flex-direction: column;
     gap: var(--padding);
 
+    #view-home,
+    #view-words,
+    #view-omit,
+    #view-info {
+        display: flex;
+        flex-direction: column;
+        gap: var(--padding);
+    }
+
+    #view-home.hidden,
+    #view-words.hidden,
+    #view-omit.hidden,
+    #view-info.hidden {
+        display: none;
+    }
+
+    #view-info .button,
+    #view-info a.button {
+        width: fit-content;
+        align-self: flex-start;
+        padding: calc(var(--padding) * 0.5);
+        text-align: left;
+        background: transparent;
+        color: white;
+        border: 2px solid white;
+        font-family: "Calibri", "Segoe UI", Arial, sans-serif;
+        border-radius: 5px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    #view-info .button:hover,
+    #view-info .button:focus,
+    #view-info a.button:hover,
+    #view-info a.button:focus {
+        transform: scale(1.05);
+        cursor: pointer;
+    }
+
     .home-sitelink {
         padding: calc(var(--padding) * 0.5);
         border: 3px solid rgba(255, 255, 255, 0.5);
@@ -99,6 +143,37 @@ nav {
         }
     }
 
+    .scroll {
+        overflow: scroll;
+        max-height: 200px;
+        border: 2px solid white;
+        border-radius: 10px;
+        padding: var(--padding);
+
+        .phrase-item,
+        .word-item {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--padding);
+            min-width: 0;
+        }
+
+        .word-item .phrase-right {
+            flex-shrink: 0;
+        }
+
+        .word-item h2,
+        .word-item .phrase-text,
+        .phrase-item .phrase-text {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
     .card {
         display: flex;
         flex-direction: column;
@@ -106,6 +181,10 @@ nav {
         padding: 15px;
         background-color: rgb(255, 255, 255, 0.2);
         border-radius: 10px;
+
+        .hidden {
+            display: none;
+        }
 
         &.dev-card {
             background-color: rgba(255, 201, 39, 0.2);
@@ -129,7 +208,7 @@ nav {
             margin-top: -5px;
         }
 
-        button {
+        button, .button {
             width: fit-content;
             align-self: flex-start;
             padding: calc(var(--padding) * 0.5);
@@ -188,8 +267,6 @@ nav {
                 height: 0;
             }
         }
-
-        /* Hide default HTML checkbox */
         
         .slider {
             position: absolute;
