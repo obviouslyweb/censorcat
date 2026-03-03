@@ -8,7 +8,7 @@ const DISABLE_CENSOR = false;
 // Default phrases to censor
 const CENSORED_PHRASES = [
     // Format: [ "phrase", case-sensitive, regex ]
-    [ "Tutorials", false, false ],
+    [ "Tutorial", false, false ],
     [ "certificates", false, false ]
 ];
 
