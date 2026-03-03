@@ -12,9 +12,9 @@ Dynamic censoring extension for the Firefox Browser. Currently in active develop
 * Integrated popup UI with easy option toggling
 
 ## To-Do
-* [ ] Complete phrase UI and integrate with code
+* [X] Complete phrase UI and integrate with code
 * [ ] Complete omit list UI and integrate with code
-* [ ] Complete info UI
+* [X] Complete info UI
 * [ ] Add ability to auto-update censoring on settings changes
 * [ ] Add ability to censor pages that auto-update
 * [ ] Polish UI and code as needed
