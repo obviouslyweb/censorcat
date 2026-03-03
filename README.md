@@ -15,8 +15,6 @@ Dynamic censoring extension for the Firefox Browser. Currently in active develop
 * [ ] Add ability to auto-update censoring on settings changes
 * [ ] Add ability to censor pages that auto-update
 * [ ] Polish UI and code as needed
-* [X] Complete phrase UI and integrate with code
-* [X] Complete info UI
 
 ## Information
 CensorCAT is being developed in JavaScript with the usage of Firefox WebExtensionsAPI. This is my first time working on something like this, so feedback and suggestions in issues would be greatly appreciated!
