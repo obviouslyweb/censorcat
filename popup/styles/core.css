@@ -144,7 +144,8 @@ nav {
     }
 
     .scroll {
-        overflow: scroll;
+        overflow-x: hidden;
+        overflow-y: auto;
         max-height: 200px;
         border: 2px solid white;
         border-radius: 10px;
@@ -210,6 +211,7 @@ nav {
         .word-item h2,
         .word-item .phrase-text,
         .phrase-item .phrase-text {
+            flex: 1 1 0;
             min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;

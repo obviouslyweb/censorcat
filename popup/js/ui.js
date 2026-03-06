@@ -125,7 +125,8 @@ function setWordDetails() {
         item.className = "phrase-item";
 
         const p = document.createElement("p");
-        p.textContent = maskPhraseForDisplay(phraseText);
+        p.className = "phrase-text";
+        p.textContent = isRegex ? phraseText : maskPhraseForDisplay(phraseText);
         item.appendChild(p);
 
         const phraseRight = document.createElement("div");
