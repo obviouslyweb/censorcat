@@ -9,7 +9,7 @@ const DISABLE_CENSOR = false;
 const CENSORED_PHRASES = [
     // Format: [ "phrase", case-sensitive, regex ]
     [ "god", false, false ],
-    [ "\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", false, true ], // Email regex demo
+    [ "\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\b", false, true ], // Email regex demo
     [ "Roblox", true, false ] // Case-sensitive Roblox demo
 ];
 
