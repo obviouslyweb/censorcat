@@ -149,15 +149,58 @@ nav {
         border: 2px solid white;
         border-radius: 10px;
         padding: var(--padding);
+        display: flex;
+        flex-direction: column;
+        gap: calc(var(--padding) * 0.5);
 
-        .phrase-item,
-        .word-item {
+        .phrase-item {
             display: flex;
             flex-direction: row;
             justify-content: space-between;
             align-items: center;
             gap: var(--padding);
             min-width: 0;
+
+            .phrase-right {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                flex-shrink: 0;
+                align-items: center;
+
+                img {
+                    max-width: 22px;
+                    max-height: 22px;
+                    width: auto;
+                    height: auto;
+                    object-fit: contain;
+                    display: block;
+                }
+
+                button {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-width: 22px;
+                    min-height: 22px;
+                    max-width: 22px;
+                    max-height: 22px;
+                    padding: 0;
+                    background: transparent;
+                    color: white;
+                    border: white 1px solid;
+                    border-radius: 5px;
+                    transition: 0.1s all;
+                    font-size: inherit;
+                    line-height: 1;
+
+                    &:hover {
+                        color: #ff6161;
+                        border-color: #ff6161;
+                        transform: scale(1.02);
+                    }
+                }
+            }
         }
 
         .word-item .phrase-right {
@@ -248,6 +291,16 @@ nav {
         .mode-custom #char-row,
         .mode-custom #sub-row {
             display: block;
+        }
+
+        #add-censor-op2 img,
+        #add-censor-op1 img {
+            max-width: 24px;
+            max-height: 24px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            vertical-align: middle;
         }
 
         .mode-custom #char-row.hidden,

@@ -122,7 +122,7 @@ function setWordDetails() {
             : [String(entry || ""), false, false];
 
         const item = document.createElement("div");
-        item.className = "word-item";
+        item.className = "phrase-item";
 
         const p = document.createElement("p");
         p.textContent = maskPhraseForDisplay(phraseText);
@@ -133,13 +133,13 @@ function setWordDetails() {
 
         if (caseSensitive) {
             const caseIcon = document.createElement("img");
-            caseIcon.src = "#";
+            caseIcon.src = browser.runtime.getURL("icons/elements/icon-case.png");
             caseIcon.alt = "Case-sensitive icon";
             phraseRight.appendChild(caseIcon);
         }
         if (isRegex) {
             const regexIcon = document.createElement("img");
-            regexIcon.src = "#";
+            regexIcon.src = browser.runtime.getURL("icons/elements/icon-regx.png");
             regexIcon.alt = "REGEX pattern icon";
             phraseRight.appendChild(regexIcon);
         }

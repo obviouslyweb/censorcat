@@ -8,11 +8,9 @@ const DISABLE_CENSOR = false;
 // Default phrases to censor
 const CENSORED_PHRASES = [
     // Format: [ "phrase", case-sensitive, regex ]
-    [ "Tutorial", false, false ],
-    [ "testing", false, false ],
-    [ "certificates", false, false ],
-    [ "woahthatscool", false, false ],
-    [ "1989pt2byhydelicisgood", false, false ]
+    [ "god", false, false ],
+    [ "\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", false, true ], // Email regex demo
+    [ "Roblox", true, false ] // Case-sensitive Roblox demo
 ];
 
 // Default replacement char & substitute phrase
