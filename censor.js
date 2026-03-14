@@ -64,6 +64,21 @@ function ensureRecensorObserver() {
         if (isApplyingCensor) {
             return;
         }
+        
+        const isUserTyping = mutations.some((mutation) => {
+            let el = mutation.target.nodeType === Node.ELEMENT_NODE ? mutation.target : mutation.target.parentElement;
+            while (el && el !== document.body) {
+                const tag = el.tagName && el.tagName.toUpperCase();
+                if (tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable) {
+                    return true;
+                }
+                el = el.parentElement;
+            }
+            return false;
+        });
+        if (isUserTyping) {
+            return;
+        }
 
         // Only re-run if actual text or nodes changed
         const hasRelevantChange = mutations.some((mutation) =>
@@ -163,8 +178,8 @@ function walkThroughHTMLNode(node) {
     if (
         node.nodeType === Node.ELEMENT_NODE &&
 
-        // Skip non-content & user input elements
-        !["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA"].includes(node.tagName)
+        // Skip non-content & user input elements (do not walk into inputs so we never touch them)
+        !["SCRIPT", "STYLE", "NOSCRIPT", "INPUT", "TEXTAREA"].includes(node.tagName)
     ) {
         let actions = 0;
         for (const child of node.childNodes) {
