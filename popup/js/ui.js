@@ -30,30 +30,39 @@ function hideAllPages() {
     document.querySelector("#view-words").classList.add("hidden");
     document.querySelector("#view-omit").classList.add("hidden");
     document.querySelector("#view-info").classList.add("hidden");
+
+    document.querySelector("#nav-home").classList.remove("active");
+    document.querySelector("#nav-words").classList.remove("active");
+    document.querySelector("#nav-omit").classList.remove("active");
+    document.querySelector("#nav-info").classList.remove("active");
 }
 
 // Show home page
 document.querySelector("#nav-home").addEventListener("click", () => {
     hideAllPages();
     document.querySelector("#view-home").classList.remove("hidden");
+    document.querySelector("#nav-home").classList.add("active");
 });
 
 // Show words page
 document.querySelector("#nav-words").addEventListener("click", () => {
     hideAllPages();
     document.querySelector("#view-words").classList.remove("hidden");
+    document.querySelector("#nav-words").classList.add("active");
 });
 
 // Show omit list page
 document.querySelector("#nav-omit").addEventListener("click", () => {
     hideAllPages();
     document.querySelector("#view-omit").classList.remove("hidden");
+    document.querySelector("#nav-omit").classList.add("active");
 });
 
 // Show info page
 document.querySelector("#nav-info").addEventListener("click", () => {
     hideAllPages();
     document.querySelector("#view-info").classList.remove("hidden");
+    document.querySelector("#nav-info").classList.add("active");
 });
 
 // ------------------------------------------------------------

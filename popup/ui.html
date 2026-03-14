@@ -15,10 +15,10 @@
     <!-- Navigation -->
     <header>
         <nav>
-            <button id="nav-home" type="button">Home</button>
-            <button id="nav-words" type="button">Words</button>
-            <button id="nav-omit" type="button">Omit</button>
-            <button id="nav-info" type="button">Info</button>
+            <button id="nav-home" type="button" class="btn active">Home</button>
+            <button id="nav-words" type="button" class="btn">Words</button>
+            <button id="nav-omit" type="button" class="btn">Omit</button>
+            <button id="nav-info" type="button" class="btn">Info</button>
         </nav>
     </header>
 
@@ -96,14 +96,15 @@
             <section class="card">
                 <h2>Add to censor</h2>
                 <input type="text" id="add-phrase" placeholder="Type what you want to remove...">
-                <div id="add-censor-op1">
-                    <input name="case-indicator" type="checkbox" id="case-indicator">
+                <div class="add-card-question" id="add-censor-op1">
+                    <input class="label-core"  name="case-indicator" type="checkbox" id="case-indicator">
                     <label for="case-indicator">Treat as case-sensitive</label>
+                    <img src="../icons/elements/icon-case.png" alt="Case-sensitive icon">
                     <p>If enabled, this will only censor phrases that match the exact case format of your entry. If that doesn't matter, leave this box unchecked.</p>
                 </div>
                 <div id="add-censor-op2">
                     <input name="regex-indicator" type="checkbox" id="regex-indicator">
-                    <label for="regex-indicator">This is a REGEX pattern</label>
+                    <label class="label-core" for="regex-indicator">This is a REGEX pattern</label>
                     <img src="../icons/elements/icon-regx.png" alt="REGEX pattern icon">
                     <p>If enabled, this will treat the given entry as a <bold>regular expression</bold> and censor accordingly. If you don't know what that is, then don't tick this box or it might cause some strange effects!</p>
                 </div>
@@ -114,8 +115,33 @@
 
          <!-- OMIT LIST SEGMENT -->
         <div id="view-omit" class="hidden">
-            <h2>COMING SOON</h2>
-            <p>This page will feature the ability to add and remove webpages from the omit list. Please stay tuned for further updates!</p>
+
+             <p id="omit-status">Calculating total omitted websites...</p>
+             <div id="word-list" class="scroll">
+                <!-- Dynamically add items in here -->
+
+                <div class="site-item">
+                    <p class="site-url">Site URL here</p>
+                    <div class="site-right">
+                        <button class="remove-site">X</button>
+                    </div>
+                </div>
+
+                <!-- Dynamically add items in here -->
+             </div>
+
+            <section class="card">
+                <h2>Add to omit list</h2>
+                <input type="text" id="add-phrase" placeholder="Type URL to omit...">
+                <button type="button">Use currently-focused page</button>
+                <div id="add-censor-op1">
+                    <input name="domain-indicator" type="checkbox" id="domain-indicator">
+                    <label for="domain-indicator">Omit all pages in domain</label>
+                    <p>If enabled, all pages under the core domain of the site will be omitted instead of just that specific page.</p>
+                </div>
+                <button id="censor-phrase-submit">Omit page</button>
+            </section>
+
         </div>
 
          <!-- INFO SEGMENT -->
