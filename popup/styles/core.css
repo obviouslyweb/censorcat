@@ -86,10 +86,7 @@ header {
     flex-direction: column;
     gap: var(--padding);
 
-    #view-home,
-    #view-words,
-    #view-omit,
-    #view-info {
+    .core-content {
         display: flex;
         flex-direction: column;
         gap: var(--padding);
@@ -137,6 +134,11 @@ header {
             font-style: italic;
             opacity: 50%;
         }
+
+        &.protected {
+            font-style: italic;
+            color: var(--accent-protected);
+        }
     }
 
     .scroll {
@@ -150,7 +152,17 @@ header {
         flex-direction: column;
         gap: calc(var(--padding) * 0.5);
 
-        .phrase-item {
+        .scroll-empty-state {
+            font-style: italic;
+            opacity: 50%;
+        }
+
+        .omit-domain-tag {
+            font-size: 70%;
+            opacity: 70%;
+        }
+
+        .scroll-item {
             display: flex;
             flex-direction: row;
             justify-content: space-between;
@@ -158,7 +170,7 @@ header {
             gap: var(--padding);
             min-width: 0;
 
-            .phrase-right {
+            .scroll-right {
                 display: flex;
                 align-items: center;
                 gap: 4px;
@@ -199,13 +211,13 @@ header {
             }
         }
 
-        .word-item {
+        .scroll-item {
             .phrase-right {
                 flex-shrink: 0;
             }
 
             h2,
-            .phrase-text {
+            .scroll-text {
                 flex: 1 1 0;
                 min-width: 0;
                 overflow: hidden;
@@ -214,7 +226,7 @@ header {
             }
         }
 
-        .phrase-item .phrase-text {
+        .scroll-item .scroll-text {
             flex: 1 1 0;
             min-width: 0;
             overflow: hidden;
