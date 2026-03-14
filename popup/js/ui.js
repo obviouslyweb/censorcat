@@ -1,14 +1,22 @@
 /* eslint-disable no-undef */
 
-const STORAGE_KEY = SETTINGS_STORAGE_KEY;
-const MAX_STATUS_SYNC_RETRIES = 2;
+// /////////////////////////////
+//         UI Constants
+// /////////////////////////////
+
+const STORAGE_KEY = SETTINGS_STORAGE_KEY; // localStorage access key
+const MAX_STATUS_SYNC_RETRIES = 2; // How many attempts to get page data before we determine it's protected
 let refreshTimerId = null;
 let refreshRequestId = 0;
 let statusSyncRetryCount = 0;
 let lastStatusSyncTabId = null;
 let uiSettings = getDefault();
 
-// Persist settings
+// /////////////////////////////
+//     Storage persistence
+// /////////////////////////////
+
+// Save settings to storage and refresh word/omit lists
 async function persistSettings(settings) {
     try {
         uiSettings = await saveSettings(settings);
@@ -18,59 +26,39 @@ async function persistSettings(settings) {
     }
     renderDevStorage(uiSettings);
     setWordDetails();
+    setOmitDetails();
 }
 
+// /////////////////////////////
+//      Navigation buttons
+// /////////////////////////////
 
-// ------------------------------------------------------------
-// SWITCH PAGE LOGIC
-// ------------------------------------------------------------
+const VIEW_IDS = ["view-home", "view-words", "view-omit", "view-info"];
+const NAV_IDS = ["nav-home", "nav-words", "nav-omit", "nav-info"];
 
+// Hide all views and clear active nav state
 function hideAllPages() {
-    document.querySelector("#view-home").classList.add("hidden");
-    document.querySelector("#view-words").classList.add("hidden");
-    document.querySelector("#view-omit").classList.add("hidden");
-    document.querySelector("#view-info").classList.add("hidden");
-
-    document.querySelector("#nav-home").classList.remove("active");
-    document.querySelector("#nav-words").classList.remove("active");
-    document.querySelector("#nav-omit").classList.remove("active");
-    document.querySelector("#nav-info").classList.remove("active");
+    VIEW_IDS.forEach((id) => document.querySelector(`#${id}`)?.classList.add("hidden"));
+    NAV_IDS.forEach((id) => document.querySelector(`#${id}`)?.classList.remove("active"));
 }
 
-// Show home page
-document.querySelector("#nav-home").addEventListener("click", () => {
+// Show one view and set its nav button active
+function showPage(viewId, navId) {
     hideAllPages();
-    document.querySelector("#view-home").classList.remove("hidden");
-    document.querySelector("#nav-home").classList.add("active");
-});
+    document.querySelector(`#${viewId}`)?.classList.remove("hidden");
+    document.querySelector(`#${navId}`)?.classList.add("active");
+}
 
-// Show words page
-document.querySelector("#nav-words").addEventListener("click", () => {
-    hideAllPages();
-    document.querySelector("#view-words").classList.remove("hidden");
-    document.querySelector("#nav-words").classList.add("active");
-});
+document.querySelector("#nav-home").addEventListener("click", () => showPage("view-home", "nav-home"));
+document.querySelector("#nav-words").addEventListener("click", () => showPage("view-words", "nav-words"));
+document.querySelector("#nav-omit").addEventListener("click", () => showPage("view-omit", "nav-omit"));
+document.querySelector("#nav-info").addEventListener("click", () => showPage("view-info", "nav-info"));
 
-// Show omit list page
-document.querySelector("#nav-omit").addEventListener("click", () => {
-    hideAllPages();
-    document.querySelector("#view-omit").classList.remove("hidden");
-    document.querySelector("#nav-omit").classList.add("active");
-});
+// /////////////////////////////
+//   HOME: status & site link
+// /////////////////////////////
 
-// Show info page
-document.querySelector("#nav-info").addEventListener("click", () => {
-    hideAllPages();
-    document.querySelector("#view-info").classList.remove("hidden");
-    document.querySelector("#nav-info").classList.add("active");
-});
-
-// ------------------------------------------------------------
-// STATUS & SITE LINK LOGIC
-// for displaying status & site link in the home page
-// ------------------------------------------------------------
-
-// Check if page is browser-protected or otherwise invulnerable to my pesky censoring code, how dare they >:(
+// Return true if URL is a protected browser scheme (about:, moz-extension:, etc)
 function isBrowserProtectedUrl(url) {
     if (!url || typeof url !== "string") {
         return false;
@@ -78,31 +66,71 @@ function isBrowserProtectedUrl(url) {
     return /^(about|chrome|edge|moz-extension|chrome-extension|view-source):/i.test(url);
 }
 
-// Render status heading + message area based on status type
-function setStatus(statusType, heading, message, showPendingNotice = false) {
-    const focusEl = document.querySelector(".home-status-focus");
-    const messageEl = document.querySelector(".home-status-msg");
-    if (!focusEl || !messageEl) {
-        return;
+// Convert URL to hostname+path for display or return unavailable/protected message
+function formatSiteLink(url) {
+    if (!url || typeof url !== "string") {
+        return "Site unavailable";
     }
-    const safeHeading = String(heading || "").toUpperCase();
-    focusEl.innerHTML = `Censoring <span class="home-status-value status-${statusType}">${safeHeading}</span>`;
-    const baseMessage = String(message || "");
-    messageEl.textContent = "";
-    if (baseMessage) {
-        messageEl.appendChild(document.createTextNode(baseMessage));
+    if (isBrowserProtectedUrl(url)) {
+        return "Browser protected page";
     }
-    if (showPendingNotice) {
-        if (baseMessage) {
-            messageEl.appendChild(document.createTextNode(" "));
-        }
-        const noticeEl = document.createElement("span");
-        noticeEl.className = "status-settings-pending";
-        noticeEl.textContent = "Settings changed after this page was censored. Reload this page to apply them.";
-        messageEl.appendChild(noticeEl);
+    try {
+        const parsed = new URL(url);
+        return `${parsed.hostname}${parsed.pathname}`;
+    } catch {
+        return url;
     }
 }
 
+// Set home sitelink text and toggle soft/protected classes by content
+function setSiteLink(text) {
+    const siteLinkEl = document.querySelector(".home-sitelink");
+    if (!siteLinkEl) {
+        return;
+    }
+    const normalizedText = String(text || "").trim().toLowerCase();
+    siteLinkEl.classList.toggle("soft", normalizedText === "site unavailable");
+    siteLinkEl.classList.toggle("protected", normalizedText === "browser protected page");
+    siteLinkEl.textContent = text;
+}
+
+// Update home page status heading and message, optionally append reload notice
+function setStatus(statusType, heading, message, showPendingNotice = false) {
+    const focusEl = document.querySelector(".home-status-focus");
+    const messageEl = document.querySelector(".home-status-msg");
+    if (!focusEl || !messageEl) return;
+    focusEl.innerHTML = `Censoring <span class="home-status-value status-${statusType}">${String(heading || "").toUpperCase()}</span>`;
+    messageEl.textContent = String(message || "");
+    if (showPendingNotice) {
+        messageEl.appendChild(document.createTextNode(" "));
+        const notice = document.createElement("span");
+        notice.className = "status-settings-pending";
+        notice.textContent = "Settings changed after this page was censored. Reload this page to apply them.";
+        messageEl.appendChild(notice);
+    }
+}
+
+// Map content script status tuple to { statusType, heading, message }
+function buildStatus(status) {
+    if (!Array.isArray(status) || status.length < 3) return null;
+    const didRun = Boolean(status[0]);
+    const heading = String(status[1] || (didRun ? "Enabled" : "Unavailable"));
+    const message = String(status[2] || "");
+    const h = heading.toLowerCase();
+    const statusType = didRun ? "enabled"
+        : h === "omitted" ? "omitted"
+        : h.startsWith("loading") ? "loading"
+        : h === "protected" ? "protected"
+        : h === "unavailable" ? "unavailable"
+        : "disabled";
+    return { statusType, heading, message };
+}
+
+// /////////////////////////////////////
+//    List UI (for words & omit tabs)
+// /////////////////////////////////////
+
+// Return phrase with middle letters replaced by asterisks for list display
 function maskPhraseForDisplay(text) {
     const s = String(text || "");
     const len = s.length;
@@ -111,6 +139,7 @@ function maskPhraseForDisplay(text) {
     return s[0] + "*".repeat(len - 2) + s[len - 1];
 }
 
+// Populate words-status and word-list from uiSettings.censoredPhrases
 function setWordDetails() {
     const count = Array.isArray(uiSettings.censoredPhrases) ? uiSettings.censoredPhrases.length : 0;
     const wordsStatusElement = document.getElementById("words-status");
@@ -131,15 +160,15 @@ function setWordDetails() {
             : [String(entry || ""), false, false];
 
         const item = document.createElement("div");
-        item.className = "phrase-item";
+        item.className = "scroll-item";
 
         const p = document.createElement("p");
-        p.className = "phrase-text";
+        p.className = "scroll-text";
         p.textContent = isRegex ? phraseText : maskPhraseForDisplay(phraseText);
         item.appendChild(p);
 
         const phraseRight = document.createElement("div");
-        phraseRight.className = "phrase-right";
+        phraseRight.className = "scroll-right phrase-right";
 
         if (caseSensitive) {
             const caseIcon = document.createElement("img");
@@ -155,7 +184,7 @@ function setWordDetails() {
         }
 
         const removeBtn = document.createElement("button");
-        removeBtn.className = "remove-phrase";
+        removeBtn.className = "remove-item";
         removeBtn.type = "button";
         removeBtn.textContent = "X";
         removeBtn.addEventListener("click", () => {
@@ -169,94 +198,101 @@ function setWordDetails() {
         item.appendChild(phraseRight);
         wordListEl.appendChild(item);
     });
+
+    if (phrases.length === 0) {
+        const emptyEl = document.createElement("p");
+        emptyEl.className = "scroll-empty-state";
+        emptyEl.textContent = "No items to display.";
+        wordListEl.appendChild(emptyEl);
+    }
 }
 
-// Render site label and style unavailable state
-function setSiteLink(text) {
-    const siteLinkEl = document.querySelector(".home-sitelink");
-    if (!siteLinkEl) {
+// Populate omit-status and omit-list from uiSettings.ignoredSites
+function setOmitDetails() {
+    const omitListEl = document.getElementById("omit-list");
+    const omitStatusEl = document.getElementById("omit-status");
+    if (!omitListEl) {
         return;
     }
-    const normalizedText = String(text || "").trim().toLowerCase();
-    siteLinkEl.classList.toggle("soft", normalizedText === "site unavailable");
-    siteLinkEl.textContent = text;
+    omitListEl.textContent = "";
+
+    const sites = Array.isArray(uiSettings.ignoredSites) ? uiSettings.ignoredSites : [];
+    if (omitStatusEl) {
+        omitStatusEl.innerHTML = `Currently omitting <strong>${sites.length}</strong> site${sites.length === 1 ? "" : "s"}.`;
+    }
+    sites.forEach((entry, index) => {
+        const [site, wholeDomain] = Array.isArray(entry) && entry.length >= 2
+            ? entry
+            : [String(entry || ""), false];
+
+        const item = document.createElement("div");
+        item.className = "scroll-item";
+
+        const p = document.createElement("p");
+        p.className = "scroll-text";
+        p.textContent = site;
+        if (wholeDomain) {
+            const domainSpan = document.createElement("span");
+            domainSpan.className = "omit-domain-tag";
+            domainSpan.textContent = " (domain)";
+            p.appendChild(domainSpan);
+        }
+        item.appendChild(p);
+
+        const itemRight = document.createElement("div");
+        itemRight.className = "scroll-right phrase-right";
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "remove-item";
+        removeBtn.type = "button";
+        removeBtn.textContent = "X";
+        removeBtn.addEventListener("click", () => {
+            if (confirm("Remove this site from the omit list?")) {
+                uiSettings.ignoredSites.splice(index, 1);
+                persistSettings(uiSettings);
+            }
+        });
+        itemRight.appendChild(removeBtn);
+
+        item.appendChild(itemRight);
+        omitListEl.appendChild(item);
+    });
+
+    if (sites.length === 0) {
+        const emptyEl = document.createElement("p");
+        emptyEl.className = "scroll-empty-state";
+        emptyEl.textContent = "No items to display.";
+        omitListEl.appendChild(emptyEl);
+    }
 }
 
-// Convert site url into readable host/path text for site link display
-function formatSiteLink(url) {
-    if (!url || typeof url !== "string") {
-        return "Site unavailable";
-    }
-    if (isBrowserProtectedUrl(url)) {
-        return "Browser protected page";
-    }
-    try {
-        const parsed = new URL(url);
-        return `${parsed.hostname}${parsed.pathname}`;
-    } catch {
-        return url;
-    }
-}
+// /////////////////////////////
+//  Setting changes detection
+// /////////////////////////////
 
-// map content-script tuple into popup status types
-function buildStatusFromTuple(status) {
-    if (!Array.isArray(status) || status.length < 3) {
-        return null;
-    }
-    const didRun = Boolean(status[0]);
-    const heading = String(status[1] || (didRun ? "Enabled" : "Unavailable"));
-    const message = String(status[2] || "");
-    const normalizedHeading = heading.toLowerCase();
-    let statusType = "disabled";
-
-    // note: there's DEFINITELY a better way to do this but this will work for now
-    if (didRun) {
-        statusType = "enabled";
-    } else if (normalizedHeading === "omitted") {
-        statusType = "omitted";
-    } else if (normalizedHeading.startsWith("loading")) {
-        statusType = "loading";
-    } else if (normalizedHeading === "protected") {
-        statusType = "protected";
-    } else if (normalizedHeading === "unavailable") {
-        statusType = "unavailable";
-    }
-
-    return { statusType, heading, message };
-}
-
-// ------------------------------------------------------------
-// SETTINGS COMPARISON LOGIC
-// for telling whether or not settings have been changed
-// this lets us show the warning to the user to reload the page
-// ------------------------------------------------------------
-
-// create deterministic serialized signature for settings comparison
-function buildSettingsSignature(settings) {
-    const normalized = normalizeSettings(settings);
+// Return JSON string of normalized settings for comparison
+function getSettingsSignature(settings) {
+    const n = normalizeSettings(settings);
     return JSON.stringify({
-        disableCensor: normalized.disableCensor,
-        censorMode: normalized.censorMode,
-        censorChar: normalized.censorChar,
-        censorSub: normalized.censorSub,
-        censoredPhrases: normalized.censoredPhrases,
-        ignoredSites: normalized.ignoredSites
+        disableCensor: n.disableCensor,
+        censorMode: n.censorMode,
+        censorChar: n.censorChar,
+        censorSub: n.censorSub,
+        censoredPhrases: n.censoredPhrases,
+        ignoredSites: n.ignoredSites
     });
 }
 
+// Return true if page settings differ from current UI settings
 function shouldShowPendingNotice(pageSettings) {
-    if (!pageSettings) {
-        return false;
-    }
-    return buildSettingsSignature(pageSettings) !== buildSettingsSignature(uiSettings);
+    return pageSettings && getSettingsSignature(pageSettings) !== getSettingsSignature(uiSettings);
 }
 
-// ------------------------------------------------------------
-// UI UPDATE LOGIC
-// update the UI based on settings and vice versa
-// ------------------------------------------------------------
+// /////////////////////////////
+//   Update UI with settings
+// /////////////////////////////
 
-// Push settings values into all UI controls
+// Push settings into all home page controls (toggle, mode, char, substitute phrase)
 function applySettingsToUi(settings) {
     const parsed = normalizeSettings(settings);
     uiSettings = parsed;
@@ -290,11 +326,11 @@ function applySettingsToUi(settings) {
         subInput.value = parsed.censorSub;
     }
 
-    updateModeCustomVisibility(parsed.censorMode);
+    updateModeVisibility(parsed.censorMode);
 }
 
-// Mode 3 uses substitute phrase input; other modes use char input
-function updateModeCustomVisibility(mode) {
+// Show char row or substitute phrase row depending on censor mode
+function updateModeVisibility(mode) {
     const charRow = document.querySelector("#char-row");
     const subRow = document.querySelector("#sub-row");
     if (!charRow || !subRow) {
@@ -306,25 +342,36 @@ function updateModeCustomVisibility(mode) {
     subRow.classList.toggle("hidden", !useSubstituteMode);
 }
 
-// DEV FUNCTION: JSON dump of currently loaded settings
-// !!! REMOVE BEFORE PRODUCTION BUILD !!!
-function renderDevStorage(settings) {
-    const devPre = document.querySelector("#dev-storage-data");
-    if (!devPre) {
-        return;
-    }
-    devPre.textContent = JSON.stringify(settings, null, 2);
-}
-// !!! REMOVE BEFORE PRODUCTION BUILD !!!
+// ///////////////////////////////
+//     Tabs & refresh elements
+// ///////////////////////////////
 
-// Returns currently focused tab in the current window.
+// Return the currently active tab in the current window
 async function getActiveTab() {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
     return tabs[0] || null;
 }
 
-// Main popup status refresh pipeline
-// uses request id guarding so only latest async attempt will update UI
+// Cancel any pending refreshStatus timer
+function clearRefreshTimer() {
+    if (refreshTimerId !== null) {
+        window.clearTimeout(refreshTimerId);
+        refreshTimerId = null;
+    }
+}
+
+// Schedule a single refreshStatus run after 700 ms
+function scheduleRefresh() {
+    if (refreshTimerId !== null) {
+        return;
+    }
+    refreshTimerId = window.setTimeout(() => {
+        refreshTimerId = null;
+        refreshStatus();
+    }, 700);
+}
+
+// Fetch tab and content script status then update site link and status UI
 async function refreshStatus() {
     const requestId = ++refreshRequestId;
     const applyIfCurrent = (updateFn) => {
@@ -352,7 +399,6 @@ async function refreshStatus() {
         return;
     }
 
-    // Reset retry tracking when user switches tabs.
     if (activeTab.id !== lastStatusSyncTabId) {
         lastStatusSyncTabId = activeTab.id;
         statusSyncRetryCount = 0;
@@ -381,7 +427,6 @@ async function refreshStatus() {
     }
 
     try {
-        // Query content script for page-local status tuple + settings used at run time.
         const response = await browser.tabs.sendMessage(activeTab.id, { type: "GET_CENSOR_STATUS" });
         statusSyncRetryCount = 0;
         applyIfCurrent(() => {
@@ -391,7 +436,7 @@ async function refreshStatus() {
             setSiteLink(responseSite);
 
             const pageSettings = response && response.settings ? normalizeSettings(response.settings) : null;
-            const statusData = buildStatusFromTuple(response && response.status);
+            const statusData = buildStatus(response && response.status);
             if (statusData) {
                 setStatus(
                     statusData.statusType,
@@ -404,8 +449,6 @@ async function refreshStatus() {
             }
         });
     } catch {
-        // Content script may not be ready/injectable yet
-        // Retry based on sync var and then give up
         statusSyncRetryCount += 1;
         const shouldRetry = statusSyncRetryCount < MAX_STATUS_SYNC_RETRIES;
         applyIfCurrent(() => {
@@ -420,28 +463,11 @@ async function refreshStatus() {
     }
 }
 
-// Cancel pending polling timer
-function clearRefreshTimer() {
-    if (refreshTimerId !== null) {
-        window.clearTimeout(refreshTimerId);
-        refreshTimerId = null;
-    }
-}
+// //////////////////////////////////
+//   Wire event handlers & controls
+// //////////////////////////////////
 
-// Debounced polling scheduler to avoid stacking concurrent timers
-function scheduleRefresh() {
-    if (refreshTimerId !== null) {
-        return;
-    }
-    refreshTimerId = window.setTimeout(() => {
-        refreshTimerId = null;
-        refreshStatus();
-    }, 700);
-}
-
-// Overwrite storage with defaults for testing
-// NOTE: This was going to be dev only but i kinda like it
-// Might reformat to use in info if needs be later on
+// Wire reset-to-defaults button to persist defaults and refresh UI
 function wireDevControls() {
     const resetButton = document.querySelector("#dev-reset-defaults");
     if (!resetButton) {
@@ -456,8 +482,7 @@ function wireDevControls() {
     });
 }
 
-// Attach settings control events
-// each writes to storage and refreshes status UI
+// Wire disable toggle, mode radios, char input, and substitute phrase to storage
 function wireSettingsControls() {
     const toggleEl = document.querySelector("#disable-censor-toggle");
     if (toggleEl) {
@@ -476,7 +501,7 @@ function wireSettingsControls() {
                 return;
             }
             uiSettings.censorMode = nextMode;
-            updateModeCustomVisibility(uiSettings.censorMode);
+            updateModeVisibility(uiSettings.censorMode);
             await persistSettings(uiSettings);
             refreshStatus();
         });
@@ -505,25 +530,97 @@ function wireSettingsControls() {
     }
 }
 
-// Add-to-censor form: submit new phrase, enforce case-sensitive vs regex mutual exclusivity
+// Normalize URL or host/path string to hostname or hostname+path for omit list
+function normalizeOmitSiteInput(inputValue) {
+    const raw = String(inputValue || "").trim();
+    if (!raw) return "";
+    if (/^https?:\/\//i.test(raw)) {
+        try {
+            const p = new URL(raw);
+            return `${p.hostname}${p.pathname === "/" ? "" : p.pathname}`;
+        } catch {
+            return raw;
+        }
+    }
+    return raw.replace(/^\/*/, "");
+}
+
+// Wire omit-current-site button and omit form submit to add sites to ignoredSites
+function wireAddOmitForm() {
+    const viewOmit = document.getElementById("view-omit");
+    if (!viewOmit) {
+        return;
+    }
+    const addPhraseInput = viewOmit.querySelector("#add-phrase");
+    const domainIndicator = viewOmit.querySelector("#domain-indicator");
+    const submitBtn = viewOmit.querySelector("#censor-phrase-submit");
+    const useCurrentBtn = document.getElementById("omit-current-site");
+
+    if (useCurrentBtn && addPhraseInput) {
+        useCurrentBtn.addEventListener("click", async () => {
+            try {
+                const tab = await getActiveTab();
+                if (tab && tab.url) {
+                    const siteText = formatSiteLink(tab.url);
+                    if (siteText !== "Site unavailable" && siteText !== "Browser protected page") {
+                        addPhraseInput.value = siteText;
+                    } else {
+                        addPhraseInput.value = tab.url;
+                    }
+                } else {
+                    addPhraseInput.placeholder = "No tab available. Focus a tab and try again.";
+                    addPhraseInput.value = "";
+                }
+            } catch {
+                addPhraseInput.placeholder = "Could not get tab. Check extension permissions.";
+                addPhraseInput.value = "";
+            }
+        });
+    }
+
+    if (!addPhraseInput || !submitBtn) {
+        return;
+    }
+
+    submitBtn.addEventListener("click", async () => {
+        const raw = (addPhraseInput.value || "").trim();
+        const site = normalizeOmitSiteInput(raw);
+        if (!site) {
+            alert("Please enter a URL or site to omit.");
+            return;
+        }
+        const wholeDomain = Boolean(domainIndicator && domainIndicator.checked);
+        const list = Array.isArray(uiSettings.ignoredSites) ? uiSettings.ignoredSites : [];
+        const alreadyExists = list.some(([s, w]) => s === site && w === wholeDomain);
+        if (alreadyExists) {
+            alert("This site is already in the omit list with the same options.");
+            return;
+        }
+        const entry = [site, wholeDomain];
+        uiSettings.ignoredSites = list;
+        uiSettings.ignoredSites.push(entry);
+        await persistSettings(uiSettings);
+
+        addPhraseInput.value = "";
+        if (domainIndicator) {
+            domainIndicator.checked = false;
+        }
+    });
+}
+
+// Wire case/regex checkboxes and censor form submit to add phrases to censoredPhrases
 function wireAddCensorForm() {
     const addPhraseInput = document.querySelector("#add-phrase");
     const caseIndicator = document.querySelector("#case-indicator");
     const regexIndicator = document.querySelector("#regex-indicator");
     const submitBtn = document.querySelector("#censor-phrase-submit");
+    if (!addPhraseInput || !caseIndicator || !regexIndicator || !submitBtn) return;
 
-    if (!addPhraseInput || !caseIndicator || !regexIndicator || !submitBtn) {
-        return;
-    }
-
-    // Enforce mutual exclusivity: case-sensitive and regex cannot both be checked
-    function enforceMutualExclusivity(justChecked) {
-        if (caseIndicator.checked && regexIndicator.checked) {
-            justChecked.checked = false;
-        }
-    }
-    caseIndicator.addEventListener("change", () => enforceMutualExclusivity(regexIndicator));
-    regexIndicator.addEventListener("change", () => enforceMutualExclusivity(caseIndicator));
+    const uncheckOther = (other) => {
+        if (caseIndicator.checked && regexIndicator.checked) other.checked = false;
+    };
+    caseIndicator.addEventListener("change", () => uncheckOther(regexIndicator));
+    regexIndicator.addEventListener("change", () => uncheckOther(caseIndicator));
 
     submitBtn.addEventListener("click", async () => {
         const phrase = (addPhraseInput.value || "").trim();
@@ -536,10 +633,17 @@ function wireAddCensorForm() {
             return;
         }
 
-        const entry = [phrase, caseIndicator.checked, regexIndicator.checked];
-        if (!Array.isArray(uiSettings.censoredPhrases)) {
-            uiSettings.censoredPhrases = [];
+        const caseSensitive = caseIndicator.checked;
+        const isRegex = regexIndicator.checked;
+        const list = Array.isArray(uiSettings.censoredPhrases) ? uiSettings.censoredPhrases : [];
+        const alreadyExists = list.some(([p, c, r]) => p === phrase && c === caseSensitive && r === isRegex);
+        if (alreadyExists) {
+            alert("This phrase is already in the censor list with the same options.");
+            return;
         }
+
+        const entry = [phrase, caseSensitive, isRegex];
+        uiSettings.censoredPhrases = list;
         uiSettings.censoredPhrases.push(entry);
         await persistSettings(uiSettings);
 
@@ -549,26 +653,42 @@ function wireAddCensorForm() {
     });
 }
 
-// Popup boot sequence
+// ////////////////////////
+//     Debug functions
+// ////////////////////////
+
+// Write settings JSON to dev storage pre element
+function renderDevStorage(settings) {
+    const el = document.querySelector("#dev-storage-data");
+    if (el) el.textContent = JSON.stringify(settings, null, 2);
+}
+
+
+// ////////////////////////
+//     INITILIZATION
+// ////////////////////////
+
+// Load settings, apply to UI, wire controls, and refresh status
 async function initializeUi() {
     let loadedSettings = getDefault();
     try {
         loadedSettings = await loadSettings();
     } catch {
-        // Keep defaults when storage read fails.
+        // Keep defaults when storage read fails
     }
     applySettingsToUi(loadedSettings);
     renderDevStorage(loadedSettings);
     setWordDetails();
+    setOmitDetails();
     wireSettingsControls();
     wireAddCensorForm();
+    wireAddOmitForm();
     wireDevControls();
     refreshStatus();
 }
 
 initializeUi();
 
-// Keep UI in sync if settings change externally
 browser.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local" || !changes[STORAGE_KEY]) {
         return;
@@ -578,22 +698,16 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     applySettingsToUi(nextValue || fallback);
     renderDevStorage(nextValue || fallback);
     setWordDetails();
+    setOmitDetails();
     refreshStatus();
 });
 
-// Status should refresh when active tab changes
-browser.tabs.onActivated.addListener(() => {
-    refreshStatus();
-});
-
-// Status should refresh when active tab URL/load state changes
+browser.tabs.onActivated.addListener(() => refreshStatus());
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (tab && tab.active && (changeInfo.status === "loading" || changeInfo.status === "complete" || changeInfo.url)) {
+    if (tab?.active && (changeInfo.status === "loading" || changeInfo.status === "complete" || changeInfo.url)) {
         refreshStatus();
     }
 });
-
-// kill pending timers when popup closes
 window.addEventListener("unload", () => {
     clearRefreshTimer();
 });
