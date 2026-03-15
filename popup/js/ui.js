@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
 
-// /////////////////////////////
+// ----------------------------
 //         UI Constants
-// /////////////////////////////
+// ----------------------------
 
 const STORAGE_KEY = SETTINGS_STORAGE_KEY; // localStorage access key
 const MAX_STATUS_SYNC_RETRIES = 2; // How many attempts to get page data before we determine it's protected
@@ -12,9 +12,9 @@ let statusSyncRetryCount = 0;
 let lastStatusSyncTabId = null;
 let uiSettings = getDefault();
 
-// /////////////////////////////
+// ----------------------------
 //     Storage persistence
-// /////////////////////////////
+// ----------------------------
 
 // Save settings to storage and refresh word/omit lists
 async function persistSettings(settings) {
@@ -29,9 +29,9 @@ async function persistSettings(settings) {
     setOmitDetails();
 }
 
-// /////////////////////////////
+// ----------------------------
 //      Navigation buttons
-// /////////////////////////////
+// ----------------------------
 
 const VIEW_IDS = ["view-home", "view-words", "view-omit", "view-info"];
 const NAV_IDS = ["nav-home", "nav-words", "nav-omit", "nav-info"];
@@ -54,9 +54,9 @@ document.querySelector("#nav-words").addEventListener("click", () => showPage("v
 document.querySelector("#nav-omit").addEventListener("click", () => showPage("view-omit", "nav-omit"));
 document.querySelector("#nav-info").addEventListener("click", () => showPage("view-info", "nav-info"));
 
-// /////////////////////////////
+// ----------------------------
 //   HOME: status & site link
-// /////////////////////////////
+// ----------------------------
 
 // Return true if URL is a protected browser scheme (about:, moz-extension:, etc)
 function isBrowserProtectedUrl(url) {
@@ -126,9 +126,9 @@ function buildStatus(status) {
     return { statusType, heading, message };
 }
 
-// /////////////////////////////////////
+// -----------------------------------
 //    List UI (for words & omit tabs)
-// /////////////////////////////////////
+// -----------------------------------
 
 // Return phrase with middle letters replaced by asterisks for list display
 function maskPhraseForDisplay(text) {
@@ -266,9 +266,9 @@ function setOmitDetails() {
     }
 }
 
-// /////////////////////////////
+// ----------------------------
 //  Setting changes detection
-// /////////////////////////////
+// ----------------------------
 
 // Return JSON string of normalized settings for comparison
 function getSettingsSignature(settings) {
@@ -288,9 +288,9 @@ function shouldShowPendingNotice(pageSettings) {
     return pageSettings && getSettingsSignature(pageSettings) !== getSettingsSignature(uiSettings);
 }
 
-// /////////////////////////////
+// ----------------------------
 //   Update UI with settings
-// /////////////////////////////
+// ----------------------------
 
 // Push settings into all home page controls (toggle, mode, char, substitute phrase)
 function applySettingsToUi(settings) {
@@ -342,9 +342,9 @@ function updateModeVisibility(mode) {
     subRow.classList.toggle("hidden", !useSubstituteMode);
 }
 
-// ///////////////////////////////
+// ------------------------------
 //     Tabs & refresh elements
-// ///////////////////////////////
+// ------------------------------
 
 // Return the currently active tab in the current window
 async function getActiveTab() {
@@ -463,9 +463,9 @@ async function refreshStatus() {
     }
 }
 
-// //////////////////////////////////
+// --------------------------------
 //   Wire event handlers & controls
-// //////////////////////////////////
+// --------------------------------
 
 // Wire reset-to-defaults button to persist defaults and refresh UI
 function wireDevControls() {
@@ -653,9 +653,9 @@ function wireAddCensorForm() {
     });
 }
 
-// ////////////////////////
+// ----------------------
 //     Debug functions
-// ////////////////////////
+// ----------------------
 
 // Write settings JSON to dev storage pre element
 function renderDevStorage(settings) {
@@ -664,9 +664,9 @@ function renderDevStorage(settings) {
 }
 
 
-// ////////////////////////
+// ----------------------
 //     INITILIZATION
-// ////////////////////////
+// ----------------------
 
 // Load settings, apply to UI, wire controls, and refresh status
 async function initializeUi() {

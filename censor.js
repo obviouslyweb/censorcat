@@ -1,25 +1,25 @@
 /* eslint-disable no-undef */
 
-// Escape literal text before converting it into RegExp source
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
+// -------------------------
+//    Define censor state
+// -------------------------
 
-// Runtime state used during page processing
 let runtimeSettings = getDefault();
 let censorStatus = {
     site: window.location.hostname + window.location.pathname,
     settings: runtimeSettings,
     status: [false, "Loading...", "Loading saved settings..."]
 };
-
-// Retry observer/timer state used for late-loading pages and dynamic DOMs
 let bodyRetryTimeoutId = null;
 let mutationObserver = null;
 let recensorTimeoutId = null;
 let isApplyingCensor = false;
 
-// Retry once body exists
+// -------------------------------
+//    DOM observer & scheduling
+// -------------------------------
+
+// Schedule a single checkCensor run after 400 ms when body was missing
 function scheduleBodyRetry() {
     if (bodyRetryTimeoutId !== null) {
         return;
@@ -30,7 +30,7 @@ function scheduleBodyRetry() {
     }, 400);
 }
 
-// Debounced re-censor trigger for MutationObserver updates
+// Schedule a single checkCensor run after 250 ms when new nodes are added
 function scheduleRecensor() {
     if (recensorTimeoutId !== null || runtimeSettings.disableCensor) {
         return;
@@ -41,7 +41,7 @@ function scheduleRecensor() {
     }, 250);
 }
 
-// Stop DOM observation when censoring is disabled
+// Disconnect observer and clear recensor timer
 function stopRecensorObserver() {
     if (mutationObserver) {
         mutationObserver.disconnect();
@@ -53,53 +53,35 @@ function stopRecensorObserver() {
     }
 }
 
-// Watch dynamic page updates so late-inserted text is also censored
+// Start observing body for new nodes and call scheduleRecensor when they appear
 function ensureRecensorObserver() {
     if (mutationObserver || !document.body) {
         return;
     }
 
     mutationObserver = new MutationObserver((mutations) => {
-        // Skip observer-triggered loops while text is being edited
         if (isApplyingCensor) {
             return;
         }
-        
-        const isUserTyping = mutations.some((mutation) => {
-            let el = mutation.target.nodeType === Node.ELEMENT_NODE ? mutation.target : mutation.target.parentElement;
-            while (el && el !== document.body) {
-                const tag = el.tagName && el.tagName.toUpperCase();
-                if (tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable) {
-                    return true;
-                }
-                el = el.parentElement;
-            }
-            return false;
-        });
-        if (isUserTyping) {
-            return;
-        }
-
-        // Only re-run if actual text or nodes changed
-        const hasRelevantChange = mutations.some((mutation) =>
-            mutation.type === "characterData" ||
-            (mutation.type === "childList" && mutation.addedNodes && mutation.addedNodes.length > 0)
+        const hasNewNodes = mutations.some((mutation) =>
+            mutation.type === "childList" && mutation.addedNodes && mutation.addedNodes.length > 0
         );
-
-        if (hasRelevantChange) {
+        if (hasNewNodes) {
             scheduleRecensor();
         }
     });
 
-    // Observe the full body tree for text and child changes
     mutationObserver.observe(document.body, {
         childList: true,
-        subtree: true,
-        characterData: true
+        subtree: true
     });
 }
 
-// Apply censor rules to a plain string and return transformed text + count
+// -----------------------
+//   Text censoring core
+// -----------------------
+
+// Apply phrase list to text and return { text, actions }
 function censorFromList(text, censorChar = "*", censorMode = 0, censorSub = "[CENSORED]", phrases = []) {
     let result = text;
     let actions = 0;
@@ -108,27 +90,19 @@ function censorFromList(text, censorChar = "*", censorMode = 0, censorSub = "[CE
         const flags = caseSensitive ? "g" : "gi";
         let regex = null;
         try {
-            // Regex entries are treated as raw source
-            // others are escaped literals
             regex = isRegex
                 ? new RegExp(word, flags)
                 : new RegExp(escapeRegExp(word), flags);
         } catch {
-            // Ignore invalid regex entries so one bad rule doesn't break all censoring
             return;
         }
 
         result = result.replace(regex, (match) => {
             actions += 1;
 
-            // if substitution mode, use phrase
-            if (censorMode === 3) {
-                return censorSub;
-            }
+            if (censorMode === 3) return censorSub;
 
             const chars = Array.from(match);
-
-            // only mask visible characters
             const nonSpaceIndexes = chars
                 .map((char, index) => (/\S/.test(char) ? index : -1))
                 .filter((index) => index >= 0);
@@ -161,9 +135,32 @@ function censorFromList(text, censorChar = "*", censorMode = 0, censorSub = "[CE
     return { text: result, actions };
 }
 
-// Recursively walk the DOM and censor text nodes
+// ---------------
+//   DOM walking
+// ---------------
+
+// Return true if node is inside an input, textarea, or contenteditable
+function isInsideEditable(node) {
+    let el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    while (el && el !== document.body) {
+        if (el.isContentEditable) {
+            return true;
+        }
+        const tag = el.tagName && el.tagName.toUpperCase();
+        if (tag === "INPUT" || tag === "TEXTAREA") {
+            return true;
+        }
+        el = el.parentElement;
+    }
+    return false;
+}
+
+// Walk DOM and replace text in non-editable nodes with censored result
 function walkThroughHTMLNode(node) {
     if (node.nodeType === Node.TEXT_NODE) {
+        if (isInsideEditable(node)) {
+            return 0;
+        }
         const censorResult = censorFromList(
             node.textContent || "",
             runtimeSettings.censorChar,
@@ -175,28 +172,35 @@ function walkThroughHTMLNode(node) {
         return censorResult.actions;
     }
 
-    if (
-        node.nodeType === Node.ELEMENT_NODE &&
-
-        // Skip non-content & user input elements (do not walk into inputs so we never touch them)
-        !["SCRIPT", "STYLE", "NOSCRIPT", "INPUT", "TEXTAREA"].includes(node.tagName)
-    ) {
-        let actions = 0;
-        for (const child of node.childNodes) {
-            actions += walkThroughHTMLNode(child);
-        }
-        return actions;
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+        return 0;
     }
 
-    return 0;
+    const tag = node.tagName && node.tagName.toUpperCase();
+    const skipTag = ["SCRIPT", "STYLE", "NOSCRIPT", "INPUT", "TEXTAREA"].includes(tag);
+    if (skipTag) {
+        return 0;
+    }
+    if (isInsideEditable(node)) {
+        return 0;
+    }
+
+    let actions = 0;
+    for (const child of node.childNodes) {
+        actions += walkThroughHTMLNode(child);
+    }
+    return actions;
 }
 
-// Decide whether to censor, then update status payload
+// ----------------------------------------------------------
+//   Censor determination (whether or not we should censor)
+// ----------------------------------------------------------
+
+// Run censoring if not omitted/disabled and update censorStatus
 function checkCensor() {
     const hostname = window.location.hostname;
-    const fullPath = window.location.hostname + window.location.pathname;
+    const fullPath = hostname + window.location.pathname;
 
-    // Domain/path ignore matching
     let ignored = runtimeSettings.ignoredSites.some(([site, wholeDomain]) => {
         if (wholeDomain) {
             return hostname === site || hostname.endsWith("." + site);
@@ -204,12 +208,10 @@ function checkCensor() {
         return fullPath.startsWith(site);
     });
 
-    // If global disable is on, pass
     if (runtimeSettings.disableCensor) {
         ignored = true;
     }
 
-    // If disabled, send message & stop dom observer
     if (ignored) {
         stopRecensorObserver();
         censorStatus = {
@@ -220,7 +222,6 @@ function checkCensor() {
         return;
     }
 
-    // Delay if body is still unavailable
     if (!document.body) {
         censorStatus = {
             site: fullPath,
@@ -231,7 +232,6 @@ function checkCensor() {
         return;
     }
 
-    // Apply censoring and then resume observer for live page updates
     isApplyingCensor = true;
     const totalActions = walkThroughHTMLNode(document.body);
     isApplyingCensor = false;
@@ -250,7 +250,10 @@ function checkCensor() {
     };
 }
 
-// Get current page status
+// -----------------------
+//    Message listener
+// -----------------------
+
 browser.runtime.onMessage.addListener((message) => {
     if (message && message.type === "GET_CENSOR_STATUS") {
         return Promise.resolve(censorStatus);
@@ -259,7 +262,9 @@ browser.runtime.onMessage.addListener((message) => {
     return undefined;
 });
 
-// Get settings from localstorage and run initial censor pass
+// ------------------------------
+//   Load localStorage settings
+// ------------------------------
 loadSettings()
     .then((loadedSettings) => {
         runtimeSettings = loadedSettings;
