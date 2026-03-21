@@ -10,12 +10,7 @@ Dynamic censoring extension for the Firefox Browser. Currently in active develop
 * The ability to omit certain webpages or domians from censoring
 * A global disable censoring toggle
 * Supports 4 censor modes, including substitute phrase mode
-
-## To-Do
-* [ ] Complete omit list UI and integrate with code
-* [ ] Add ability to auto-update censoring on settings changes
-* [ ] Add ability to censor pages that auto-update
-* [ ] Polish UI and code as needed
+* Export and import omit lists & censor dictionaries
 
 ## Information
 CensorCAT is being developed in JavaScript with the usage of Firefox WebExtensionsAPI. This is my first time working on something like this, so feedback and suggestions in issues would be greatly appreciated!

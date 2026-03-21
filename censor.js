@@ -81,6 +81,10 @@ function ensureRecensorObserver() {
 //   Text censoring core
 // -----------------------
 
+function escapeRegExp(text) {
+    return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 // Apply phrase list to text and return { text, actions }
 function censorFromList(text, censorChar = "*", censorMode = 0, censorSub = "[CENSORED]", phrases = []) {
     let result = text;
