@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Main Menu - CensorCAT</title>
-    <link rel="stylesheet" href="styles/core.css">
+    <link rel="stylesheet" href="styles/ui.css">
     <script defer src="../defaults.js"></script>
     <script defer src="../storage.js"></script>
     <script defer src="js/ui.js"></script>
@@ -144,6 +144,10 @@
 
          <!-- INFO SEGMENT -->
         <div id="view-info" class="core-content hidden">
+            <h2>Import/Export Settings</h2>
+            <p>Backups use a Base64 text format. Open the full page to export or import (the menu closes when file dialogs open).</p>
+            <button type="button" id="open-settings-io" class="button">Open import / export page</button>
+
             <p>CensorCAT is an open-source censoring extension for Mozilla Firefox, developed by obviouslyweb.</p>
 
             <a class="button" href="https://github.com/obviouslyweb/censorcat">Visit GitHub Repository</a>

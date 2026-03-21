@@ -467,6 +467,21 @@ async function refreshStatus() {
 //   Wire event handlers & controls
 // --------------------------------
 
+// Open full-tab import/export page (popup cannot host file dialogs reliably).
+function wireSettingsIoPage() {
+    const btn = document.querySelector("#open-settings-io");
+    if (!btn) {
+        return;
+    }
+
+    btn.addEventListener("click", () => {
+        const url = browser.runtime.getURL("popup/export-import.html");
+        browser.tabs.create({ url }).catch(() => {
+            alert("Could not open the import/export page. Check that the extension is allowed to open tabs.");
+        });
+    });
+}
+
 // Wire reset-to-defaults button to persist defaults and refresh UI
 function wireDevControls() {
     const resetButton = document.querySelector("#dev-reset-defaults");
@@ -635,6 +650,18 @@ function wireAddCensorForm() {
 
         const caseSensitive = caseIndicator.checked;
         const isRegex = regexIndicator.checked;
+        if (isRegex) {
+            const flags = caseSensitive ? "g" : "gi";
+            try {
+                new RegExp(phrase, flags);
+            } catch (err) {
+                const detail = err && typeof err.message === "string" && err.message.length > 0
+                    ? err.message
+                    : "The pattern could not be compiled.";
+                alert(`Invalid regular expression: ${detail}`);
+                return;
+            }
+        }
         const list = Array.isArray(uiSettings.censoredPhrases) ? uiSettings.censoredPhrases : [];
         const alreadyExists = list.some(([p, c, r]) => p === phrase && c === caseSensitive && r === isRegex);
         if (alreadyExists) {
@@ -683,6 +710,7 @@ async function initializeUi() {
     wireSettingsControls();
     wireAddCensorForm();
     wireAddOmitForm();
+    wireSettingsIoPage();
     wireDevControls();
     refreshStatus();
 }

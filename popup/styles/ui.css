@@ -97,6 +97,7 @@ header {
     }
 
     #view-info {
+        button.button,
         .button,
         a.button {
             width: fit-content;

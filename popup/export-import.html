@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import &amp; export - CensorCAT</title>
+    <link rel="stylesheet" href="styles/ui.css">
+    <link rel="stylesheet" href="styles/export-import.css">
+</head>
+<body>
+    <div class="export-import">
+        <h1>Import &amp; export settings</h1>
+
+        <section aria-labelledby="export-heading">
+            <h2>Export</h2>
+            <p>Save your current settings (including your censored phrase list and omit list) to a file. Exports use the CensorCAT Base64 text format (<code>.txt</code>).</p>
+            <div>
+                <button type="button" id="export-settings" class="btn">Export to file</button>
+            </div>
+            <p id="export-status" class="export-import-status" aria-live="polite"></p>
+        </section>
+
+        <section aria-labelledby="import-heading">
+            <h2>Import</h2>
+            <p>Import a censored phrase list and omit list from a previously exported file. Only files that match the export template can be imported.</p>
+            <div>
+                <button type="button" id="import-choose" class="btn">Choose file</button>
+                <input type="file" id="import-file" accept=".txt,text/plain">
+            </div>
+            <p id="import-status" class="export-import-status" aria-live="polite"></p>
+        </section>
+
+        <script src="../defaults.js"></script>
+        <script src="../storage.js"></script>
+        <script src="js/export-import.js"></script>
+    </div>
+</body>
+</html>
