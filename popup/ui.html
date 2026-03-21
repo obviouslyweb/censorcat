@@ -105,9 +105,9 @@
                     <input name="regex-indicator" type="checkbox" id="regex-indicator">
                     <label class="label-core" for="regex-indicator">This is a REGEX pattern</label>
                     <img src="../icons/elements/icon-regx.png" alt="REGEX pattern icon">
-                    <p>If enabled, this will treat the given entry as a <bold>regular expression</bold> and censor accordingly. If you don't know what that is, then don't tick this box or it might cause some strange effects!</p>
+                    <p>If enabled, this will treat the given entry as a <strong>regular expression</strong> and censor accordingly. If you don't know what that is, then don't tick this box or it might cause some strange effects!</p>
                 </div>
-                <button id="censor-phrase-submit">Censor it!</button>
+                <button type="button" id="censor-phrase-submit">Censor it!</button>
             </section>
 
         </div>
@@ -130,14 +130,14 @@
 
             <section class="card">
                 <h2>Add to omit list</h2>
-                <input type="text" id="add-phrase" placeholder="Type URL to omit...">
+                <input type="text" id="omit-add-phrase" placeholder="Type URL to omit...">
                 <button type="button" id="omit-current-site">Use currently-focused page</button>
-                <div id="add-censor-op1">
+                <div id="omit-add-op1">
                     <input name="domain-indicator" type="checkbox" id="domain-indicator">
                     <label for="domain-indicator">Omit all pages in domain</label>
                     <p>If enabled, all pages under the core domain of the site will be omitted instead of just that specific page.</p>
                 </div>
-                <button id="censor-phrase-submit">Omit page</button>
+                <button type="button" id="omit-phrase-submit">Omit page</button>
             </section>
 
         </div>
@@ -145,8 +145,8 @@
          <!-- INFO SEGMENT -->
         <div id="view-info" class="core-content hidden">
             <h2>Import/Export Settings</h2>
-            <p>Backups use a Base64 text format. Open the full page to export or import (the menu closes when file dialogs open).</p>
-            <button type="button" id="open-settings-io" class="button">Open import / export page</button>
+            <p>You can export your current settings (censor dictionary, omit list, censor status, censor mode, etc.) into a text file that can then be imported later or used by others also using CensorCAT.</p>
+            <button type="button" id="open-settings-io" class="button">Open import / export options</button>
 
             <p>CensorCAT is an open-source censoring extension for Mozilla Firefox, developed by obviouslyweb.</p>
 

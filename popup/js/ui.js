@@ -566,9 +566,9 @@ function wireAddOmitForm() {
     if (!viewOmit) {
         return;
     }
-    const addPhraseInput = viewOmit.querySelector("#add-phrase");
+    const addPhraseInput = viewOmit.querySelector("#omit-add-phrase");
     const domainIndicator = viewOmit.querySelector("#domain-indicator");
-    const submitBtn = viewOmit.querySelector("#censor-phrase-submit");
+    const submitBtn = viewOmit.querySelector("#omit-phrase-submit");
     const useCurrentBtn = document.getElementById("omit-current-site");
 
     if (useCurrentBtn && addPhraseInput) {
@@ -625,10 +625,12 @@ function wireAddOmitForm() {
 
 // Wire case/regex checkboxes and censor form submit to add phrases to censoredPhrases
 function wireAddCensorForm() {
-    const addPhraseInput = document.querySelector("#add-phrase");
-    const caseIndicator = document.querySelector("#case-indicator");
-    const regexIndicator = document.querySelector("#regex-indicator");
-    const submitBtn = document.querySelector("#censor-phrase-submit");
+    const viewWords = document.getElementById("view-words");
+    if (!viewWords) return;
+    const addPhraseInput = viewWords.querySelector("#add-phrase");
+    const caseIndicator = viewWords.querySelector("#case-indicator");
+    const regexIndicator = viewWords.querySelector("#regex-indicator");
+    const submitBtn = viewWords.querySelector("#censor-phrase-submit");
     if (!addPhraseInput || !caseIndicator || !regexIndicator || !submitBtn) return;
 
     const uncheckOther = (other) => {

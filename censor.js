@@ -14,6 +14,7 @@ let bodyRetryTimeoutId = null;
 let mutationObserver = null;
 let recensorTimeoutId = null;
 let isApplyingCensor = false;
+let pageSessionReplacements = 0;
 
 // -------------------------------
 //    DOM observer & scheduling
@@ -241,14 +242,17 @@ function checkCensor() {
     isApplyingCensor = false;
     ensureRecensorObserver();
 
+    pageSessionReplacements += totalActions;
+    const shown = pageSessionReplacements;
+
     censorStatus = {
         site: fullPath,
         settings: runtimeSettings,
         status: [
             true,
             "Enabled",
-            totalActions > 0
-                ? `${totalActions} replacement${totalActions === 1 ? "" : "s"} made on this page.`
+            shown > 0
+                ? `${shown} replacement${shown === 1 ? "" : "s"} made on this page.`
                 : "No matching phrases were found."
         ]
     };
@@ -264,6 +268,18 @@ browser.runtime.onMessage.addListener((message) => {
     }
 
     return undefined;
+});
+
+browser.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "local" || !changes[SETTINGS_STORAGE_KEY]) {
+        return;
+    }
+    const next = changes[SETTINGS_STORAGE_KEY].newValue;
+    runtimeSettings = normalizeSettings(next || getDefault());
+
+    window.setTimeout(() => {
+        checkCensor();
+    }, 0);
 });
 
 // ------------------------------
