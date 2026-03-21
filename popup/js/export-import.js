@@ -32,6 +32,7 @@ function isValidRegexPattern(pattern, caseSensitive) {
 }
 
 function validateImportedSettingsShape(obj) {
+    // There's probably a much better way to do this, but this'll work for now
     if (!obj || typeof obj !== "object") {
         return false;
     }
@@ -79,6 +80,7 @@ function validateImportedSettingsShape(obj) {
 }
 
 function decodeImportFile(text) {
+    // ditto with the above
     const raw = String(text || "").replace(/^\uFEFF/, "").trim();
     if (!raw.startsWith(EXPORT_HEADER)) {
         return { ok: false };
@@ -115,9 +117,6 @@ function buildExportFileBody(settings) {
     const envelope = { v: 1, ...normalized };
     return `${EXPORT_HEADER}\n${utf8ToBase64(JSON.stringify(envelope))}`;
 }
-
-// Blob/data URLs are not reliably downloadable in some Firefox extension contexts;
-// this page runs as an extension document, so downloads.download can resolve the blob URL.
 
 function scheduleRevokeBlobUrl(downloadId, blobUrl) {
     const doneStates = new Set(["complete", "interrupted"]);
