@@ -26,9 +26,32 @@ let recensorTimeoutId = null;
 let isApplyingCensor = false;
 let pageSessionReplacements = 0;
 
+const pendingRecensorRoots = new Set();
+
+let compiledCensorEntries = [];
+
 // -------------------------------
 //    DOM observer & scheduling
 // -------------------------------
+
+function rebuildCompiledCensorEntries() {
+    compiledCensorEntries = [];
+    const phrases = Array.isArray(runtimeSettings.censoredPhrases) ? runtimeSettings.censoredPhrases : [];
+    for (const entry of phrases) {
+        const [word, caseSensitive, isRegex] = Array.isArray(entry)
+            ? entry
+            : [String(entry || ""), false, false];
+        const flags = caseSensitive ? "g" : "gi";
+        try {
+            const regex = isRegex
+                ? new RegExp(word, flags)
+                : new RegExp(escapeRegExp(word), flags);
+            compiledCensorEntries.push({ regex });
+        } catch {
+            // skip invalid patterns
+        }
+    }
+}
 
 // Schedule a single checkCensor run after 400 ms when body was missing
 function scheduleBodyRetry() {
@@ -41,14 +64,14 @@ function scheduleBodyRetry() {
     }, 400);
 }
 
-// Schedule a single checkCensor run after 250 ms when new nodes are added
+// Debounced incremental pass over nodes added since last flush
 function scheduleRecensor() {
     if (recensorTimeoutId !== null || runtimeSettings.disableCensor) {
         return;
     }
     recensorTimeoutId = window.setTimeout(() => {
         recensorTimeoutId = null;
-        checkCensor();
+        flushPendingRecensor();
     }, 250);
 }
 
@@ -62,9 +85,24 @@ function stopRecensorObserver() {
         window.clearTimeout(recensorTimeoutId);
         recensorTimeoutId = null;
     }
+    pendingRecensorRoots.clear();
 }
 
-// Start observing body for new nodes and call scheduleRecensor when they appear
+// True if ancestor is an Element that contains descendant */
+function elementContainsNode(ancestor, descendant) {
+    if (!ancestor || ancestor === descendant || ancestor.nodeType !== Node.ELEMENT_NODE) {
+        return false;
+    }
+    return ancestor.contains(descendant);
+}
+
+// Drop roots that are nested under another pending root so each subtree is walked once */
+function filterTopMostNodes(nodes) {
+    const arr = [...nodes];
+    return arr.filter((n) => !arr.some((other) => other !== n && elementContainsNode(other, n)));
+}
+
+// Start observing body for new nodes and queue incremental censor work
 function ensureRecensorObserver() {
     if (mutationObserver || !document.body) {
         return;
@@ -74,9 +112,18 @@ function ensureRecensorObserver() {
         if (isApplyingCensor) {
             return;
         }
-        const hasNewNodes = mutations.some((mutation) =>
-            mutation.type === "childList" && mutation.addedNodes && mutation.addedNodes.length > 0
-        );
+        let hasNewNodes = false;
+        for (let i = 0; i < mutations.length; i++) {
+            const mutation = mutations[i];
+            if (mutation.type !== "childList" || !mutation.addedNodes.length) {
+                continue;
+            }
+            const list = mutation.addedNodes;
+            for (let j = 0; j < list.length; j++) {
+                pendingRecensorRoots.add(list[j]);
+                hasNewNodes = true;
+            }
+        }
         if (hasNewNodes) {
             scheduleRecensor();
         }
@@ -96,22 +143,21 @@ function escapeRegExp(text) {
     return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// Apply phrase list to text and return { text, actions }
-function censorFromList(text, censorChar = "*", censorMode = 0, censorSub = "[CENSORED]", phrases = []) {
+// Apply pre-compiled phrases to text and return { text, actions }
+function applyPhrasesToText(text) {
+    if (!text || compiledCensorEntries.length === 0) {
+        return { text, actions: 0 };
+    }
+
     let result = text;
     let actions = 0;
+    const censorChar = runtimeSettings.censorChar;
+    const censorMode = runtimeSettings.censorMode;
+    const censorSub = runtimeSettings.censorSub;
 
-    phrases.forEach(([word, caseSensitive, isRegex]) => {
-        const flags = caseSensitive ? "g" : "gi";
-        let regex = null;
-        try {
-            regex = isRegex
-                ? new RegExp(word, flags)
-                : new RegExp(escapeRegExp(word), flags);
-        } catch {
-            return;
-        }
-
+    for (let i = 0; i < compiledCensorEntries.length; i++) {
+        const { regex } = compiledCensorEntries[i];
+        regex.lastIndex = 0;
         result = result.replace(regex, (match) => {
             actions += 1;
 
@@ -145,7 +191,7 @@ function censorFromList(text, censorChar = "*", censorMode = 0, censorSub = "[CE
                 return censorChar;
             }).join("");
         });
-    });
+    }
 
     return { text: result, actions };
 }
@@ -154,7 +200,7 @@ function censorFromList(text, censorChar = "*", censorMode = 0, censorSub = "[CE
 //   DOM walking
 // ---------------
 
-// Return true if node is inside an input, textarea, or contenteditable
+// Return true if node is inside an input, textarea, or contenteditable subtree
 function isInsideEditable(node) {
     let el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
     while (el && el !== document.body) {
@@ -176,13 +222,14 @@ function walkThroughHTMLNode(node) {
         if (isInsideEditable(node)) {
             return 0;
         }
-        const censorResult = censorFromList(
-            node.textContent || "",
-            runtimeSettings.censorChar,
-            runtimeSettings.censorMode,
-            runtimeSettings.censorSub,
-            runtimeSettings.censoredPhrases
-        );
+        const raw = node.textContent || "";
+        if (raw.length === 0) {
+            return 0;
+        }
+        const censorResult = applyPhrasesToText(raw);
+        if (censorResult.actions === 0 && censorResult.text === raw) {
+            return 0;
+        }
         node.textContent = censorResult.text;
         return censorResult.actions;
     }
@@ -192,7 +239,8 @@ function walkThroughHTMLNode(node) {
     }
 
     const tag = node.tagName && node.tagName.toUpperCase();
-    const skipTag = ["SCRIPT", "STYLE", "NOSCRIPT", "INPUT", "TEXTAREA"].includes(tag);
+    const skipTag = tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT"
+        || tag === "INPUT" || tag === "TEXTAREA";
     if (skipTag) {
         return 0;
     }
@@ -201,10 +249,73 @@ function walkThroughHTMLNode(node) {
     }
 
     let actions = 0;
-    for (const child of node.childNodes) {
-        actions += walkThroughHTMLNode(child);
+    const children = node.childNodes;
+    for (let i = 0; i < children.length; i++) {
+        actions += walkThroughHTMLNode(children[i]);
     }
     return actions;
+}
+
+function updateEnabledCensorStatus(fullPath) {
+    const shown = pageSessionReplacements;
+    censorStatus = {
+        site: fullPath,
+        settings: settingsForPopupComparison(),
+        status: [
+            true,
+            "Enabled",
+            shown > 0
+                ? `${shown} replacement${shown === 1 ? "" : "s"} made on this page.`
+                : "No matching phrases were found."
+        ]
+    };
+}
+
+function flushPendingRecensor() {
+    if (pendingRecensorRoots.size === 0 || !document.body) {
+        return;
+    }
+
+    const hostname = window.location.hostname;
+    const fullPath = hostname + window.location.pathname;
+
+    let ignored = runtimeSettings.ignoredSites.some(([site, wholeDomain]) => {
+        if (wholeDomain) {
+            return hostname === site || hostname.endsWith("." + site);
+        }
+        return fullPath.startsWith(site);
+    });
+    if (runtimeSettings.disableCensor) {
+        ignored = true;
+    }
+    if (ignored) {
+        pendingRecensorRoots.clear();
+        return;
+    }
+
+    const topRoots = filterTopMostNodes(pendingRecensorRoots);
+    pendingRecensorRoots.clear();
+
+    isApplyingCensor = true;
+    let totalActions = 0;
+    for (let i = 0; i < topRoots.length; i++) {
+        const root = topRoots[i];
+        // Skip nodes no longer in the document
+        if (root.nodeType === Node.ELEMENT_NODE || root.nodeType === Node.TEXT_NODE) {
+            if (!root.parentNode) {
+                continue;
+            }
+        }
+        totalActions += walkThroughHTMLNode(root);
+    }
+    isApplyingCensor = false;
+
+    if (totalActions === 0) {
+        return;
+    }
+
+    pageSessionReplacements += totalActions;
+    updateEnabledCensorStatus(fullPath);
 }
 
 // ------------------------
@@ -248,25 +359,19 @@ function checkCensor() {
             return;
         }
 
+        pendingRecensorRoots.clear();
+        if (recensorTimeoutId !== null) {
+            window.clearTimeout(recensorTimeoutId);
+            recensorTimeoutId = null;
+        }
+
         isApplyingCensor = true;
         const totalActions = walkThroughHTMLNode(document.body);
         isApplyingCensor = false;
         ensureRecensorObserver();
 
         pageSessionReplacements += totalActions;
-        const shown = pageSessionReplacements;
-
-        censorStatus = {
-            site: fullPath,
-            settings: settingsForPopupComparison(),
-            status: [
-                true,
-                "Enabled",
-                shown > 0
-                    ? `${shown} replacement${shown === 1 ? "" : "s"} made on this page.`
-                    : "No matching phrases were found."
-            ]
-        };
+        updateEnabledCensorStatus(fullPath);
     } finally {
         if (pageSettingsSnapshotForNotice === null) {
             pageSettingsSnapshotForNotice = cloneSettingsSnapshot(runtimeSettings);
@@ -292,6 +397,7 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     }
     const next = changes[SETTINGS_STORAGE_KEY].newValue;
     runtimeSettings = normalizeSettings(next || getDefault());
+    rebuildCompiledCensorEntries();
 
     window.setTimeout(() => {
         checkCensor();
@@ -309,5 +415,6 @@ loadSettings()
         runtimeSettings = getDefault();
     })
     .finally(() => {
+        rebuildCompiledCensorEntries();
         checkCensor();
     });
