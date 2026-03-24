@@ -5,9 +5,19 @@
 // -------------------------
 
 let runtimeSettings = getDefault();
+let pageSettingsSnapshotForNotice = null;
+
+function settingsForPopupComparison() {
+    return pageSettingsSnapshotForNotice ?? runtimeSettings;
+}
+
+function cloneSettingsSnapshot(settings) {
+    return normalizeSettings(JSON.parse(JSON.stringify(settings)));
+}
+
 let censorStatus = {
     site: window.location.hostname + window.location.pathname,
-    settings: runtimeSettings,
+    settings: settingsForPopupComparison(),
     status: [false, "Loading...", "Loading saved settings..."]
 };
 let bodyRetryTimeoutId = null;
@@ -197,65 +207,71 @@ function walkThroughHTMLNode(node) {
     return actions;
 }
 
-// ----------------------------------------------------------
-//   Censor determination (whether or not we should censor)
-// ----------------------------------------------------------
+// ------------------------
+//   Censor determination
+// ------------------------
 
 // Run censoring if not omitted/disabled and update censorStatus
 function checkCensor() {
-    const hostname = window.location.hostname;
-    const fullPath = hostname + window.location.pathname;
+    try {
+        const hostname = window.location.hostname;
+        const fullPath = hostname + window.location.pathname;
 
-    let ignored = runtimeSettings.ignoredSites.some(([site, wholeDomain]) => {
-        if (wholeDomain) {
-            return hostname === site || hostname.endsWith("." + site);
+        let ignored = runtimeSettings.ignoredSites.some(([site, wholeDomain]) => {
+            if (wholeDomain) {
+                return hostname === site || hostname.endsWith("." + site);
+            }
+            return fullPath.startsWith(site);
+        });
+
+        if (runtimeSettings.disableCensor) {
+            ignored = true;
         }
-        return fullPath.startsWith(site);
-    });
 
-    if (runtimeSettings.disableCensor) {
-        ignored = true;
-    }
+        if (ignored) {
+            stopRecensorObserver();
+            censorStatus = {
+                site: fullPath,
+                settings: settingsForPopupComparison(),
+                status: [false, "Omitted", "Censoring is disabled for this page by your settings."]
+            };
+            return;
+        }
 
-    if (ignored) {
-        stopRecensorObserver();
+        if (!document.body) {
+            censorStatus = {
+                site: fullPath,
+                settings: settingsForPopupComparison(),
+                status: [false, "Loading...", "Waiting for page content to be available."]
+            };
+            scheduleBodyRetry();
+            return;
+        }
+
+        isApplyingCensor = true;
+        const totalActions = walkThroughHTMLNode(document.body);
+        isApplyingCensor = false;
+        ensureRecensorObserver();
+
+        pageSessionReplacements += totalActions;
+        const shown = pageSessionReplacements;
+
         censorStatus = {
             site: fullPath,
-            settings: runtimeSettings,
-            status: [false, "Omitted", "Censoring is disabled for this page by your settings."]
+            settings: settingsForPopupComparison(),
+            status: [
+                true,
+                "Enabled",
+                shown > 0
+                    ? `${shown} replacement${shown === 1 ? "" : "s"} made on this page.`
+                    : "No matching phrases were found."
+            ]
         };
-        return;
+    } finally {
+        if (pageSettingsSnapshotForNotice === null) {
+            pageSettingsSnapshotForNotice = cloneSettingsSnapshot(runtimeSettings);
+        }
     }
-
-    if (!document.body) {
-        censorStatus = {
-            site: fullPath,
-            settings: runtimeSettings,
-            status: [false, "Loading...", "Waiting for page content to be available."]
-        };
-        scheduleBodyRetry();
-        return;
-    }
-
-    isApplyingCensor = true;
-    const totalActions = walkThroughHTMLNode(document.body);
-    isApplyingCensor = false;
-    ensureRecensorObserver();
-
-    pageSessionReplacements += totalActions;
-    const shown = pageSessionReplacements;
-
-    censorStatus = {
-        site: fullPath,
-        settings: runtimeSettings,
-        status: [
-            true,
-            "Enabled",
-            shown > 0
-                ? `${shown} replacement${shown === 1 ? "" : "s"} made on this page.`
-                : "No matching phrases were found."
-        ]
-    };
 }
 
 // -----------------------
