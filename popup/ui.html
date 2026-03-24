@@ -95,17 +95,25 @@
             <section class="card">
                 <h2>Add to censor</h2>
                 <input type="text" id="add-phrase" placeholder="Type what you want to remove...">
-                <div class="add-card-question" id="add-censor-op1">
-                    <input class="label-core"  name="case-indicator" type="checkbox" id="case-indicator">
-                    <label for="case-indicator">Treat as case-sensitive</label>
-                    <img src="../icons/elements/icon-case.png" alt="Case-sensitive icon">
+                <div class="card-question" id="add-censor-op1">
+                    <div class="label-container">
+                        <input class="label-core"  name="case-indicator" type="checkbox" id="case-indicator">
+                        <div class="label-space">
+                            <label for="case-indicator">Treat as case-sensitive</label>
+                            <img src="../icons/elements/icon-case.png" alt="Case-sensitive icon">
+                        </div>
+                    </div>
                     <p>If enabled, this will only censor phrases that match the exact case format of your entry. If that doesn't matter, leave this box unchecked.</p>
                 </div>
-                <div id="add-censor-op2">
-                    <input name="regex-indicator" type="checkbox" id="regex-indicator">
-                    <label class="label-core" for="regex-indicator">This is a REGEX pattern</label>
-                    <img src="../icons/elements/icon-regx.png" alt="REGEX pattern icon">
-                    <p>If enabled, this will treat the given entry as a <strong>regular expression</strong> and censor accordingly. If you don't know what that is, then don't tick this box or it might cause some strange effects!</p>
+                <div class="card-question" id="add-censor-op2">
+                    <div class="label-container">
+                        <input name="regex-indicator" type="checkbox" id="regex-indicator">
+                        <div class="label-space">
+                            <label class="label-core" for="regex-indicator">This is a REGEX pattern</label>
+                            <img src="../icons/elements/icon-regx.png" alt="REGEX pattern icon">
+                        </div>
+                    </div>
+                    <p>If enabled, this will treat the given entry as a regular expression and censor accordingly. If you don't know what that is, then don't tick this box or it might cause some strange effects!</p>
                 </div>
                 <button type="button" id="censor-phrase-submit">Censor it!</button>
             </section>
@@ -132,9 +140,11 @@
                 <h2>Add to omit list</h2>
                 <input type="text" id="omit-add-phrase" placeholder="Type URL to omit...">
                 <button type="button" id="omit-current-site">Use currently-focused page</button>
-                <div id="omit-add-op1">
-                    <input name="domain-indicator" type="checkbox" id="domain-indicator">
-                    <label for="domain-indicator">Omit all pages in domain</label>
+                <div class="card-question" id="omit-add-op1">
+                    <div class="label-container">
+                        <input name="domain-indicator" type="checkbox" id="domain-indicator">
+                        <label for="domain-indicator">Omit all pages in domain</label>
+                    </div>
                     <p>If enabled, all pages under the core domain of the site will be omitted instead of just that specific page.</p>
                 </div>
                 <button type="button" id="omit-phrase-submit">Omit page</button>
