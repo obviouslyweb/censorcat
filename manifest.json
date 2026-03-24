@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "CensorCAT",
-    "version": "0.8.2",
+    "version": "0.8.3",
 
     "description": "Dynamic censoring extension for the Firefox Browser.",
     "homepage_url": "https://github.com/obviouslyweb/censorcat",
