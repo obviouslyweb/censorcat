@@ -5,6 +5,7 @@
 // ----------------------------
 
 const STORAGE_KEY = SETTINGS_STORAGE_KEY; // localStorage access key
+const DEV_UI_STORAGE_KEY = "censorcatDevUiEnabled";
 const MAX_STATUS_SYNC_RETRIES = 2; // How many attempts to get page data before we determine it's protected
 let refreshTimerId = null;
 let refreshRequestId = 0;
@@ -482,6 +483,34 @@ function wireSettingsIoPage() {
     });
 }
 
+// Toggle html class and checkbox so .dev-card sections use display flex vs none
+function applyDevFeaturesVisibility(enabled) {
+    document.documentElement.classList.toggle("dev-features-enabled", Boolean(enabled));
+    const toggleEl = document.querySelector("#dev-toggle");
+    if (toggleEl) {
+        toggleEl.checked = Boolean(enabled);
+    }
+}
+
+// Persist dev UI visibility
+function wireDevFeaturesToggle() {
+    const toggleEl = document.querySelector("#dev-toggle");
+    if (!toggleEl) {
+        return;
+    }
+    toggleEl.addEventListener("change", async () => {
+        const on = Boolean(toggleEl.checked);
+        try {
+            await browser.storage.local.set({ [DEV_UI_STORAGE_KEY]: on });
+        } catch {
+            toggleEl.checked = !on;
+            alert("Could not save dev features preference.");
+            return;
+        }
+        applyDevFeaturesVisibility(on);
+    });
+}
+
 // Wire reset-to-defaults button to persist defaults and refresh UI
 function wireDevControls() {
     const resetButton = document.querySelector("#dev-reset-defaults");
@@ -705,7 +734,15 @@ async function initializeUi() {
     } catch {
         // Keep defaults when storage read fails
     }
+    let devFeaturesEnabled = false;
+    try {
+        const devStored = await browser.storage.local.get(DEV_UI_STORAGE_KEY);
+        devFeaturesEnabled = Boolean(devStored[DEV_UI_STORAGE_KEY]);
+    } catch {
+        // leave false
+    }
     applySettingsToUi(loadedSettings);
+    applyDevFeaturesVisibility(devFeaturesEnabled);
     renderDevStorage(loadedSettings);
     setWordDetails();
     setOmitDetails();
@@ -713,6 +750,7 @@ async function initializeUi() {
     wireAddCensorForm();
     wireAddOmitForm();
     wireSettingsIoPage();
+    wireDevFeaturesToggle();
     wireDevControls();
     refreshStatus();
 }
@@ -720,7 +758,13 @@ async function initializeUi() {
 initializeUi();
 
 browser.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== "local" || !changes[STORAGE_KEY]) {
+    if (areaName !== "local") {
+        return;
+    }
+    if (changes[DEV_UI_STORAGE_KEY]) {
+        applyDevFeaturesVisibility(Boolean(changes[DEV_UI_STORAGE_KEY].newValue));
+    }
+    if (!changes[STORAGE_KEY]) {
         return;
     }
     const nextValue = changes[STORAGE_KEY].newValue;

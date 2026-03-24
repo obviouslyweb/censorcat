@@ -67,12 +67,14 @@
             </section>
 
             <section class="card">
-                <h2>Disable Censoring</h2>
+                <div class="side-view">
+                    <h2>Disable Censoring</h2>
+                    <label class="switch">
+                        <input id="disable-censor-toggle" type="checkbox">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
                 <p>Disables all censoring features on page load.</p>
-                <label class="switch">
-                    <input id="disable-censor-toggle" type="checkbox">
-                    <span class="slider round"></span>
-                </label>
             </section>
         </div>
 
@@ -154,17 +156,30 @@
 
          <!-- INFO SEGMENT -->
         <div id="view-info" class="core-content hidden">
-            <h2>Import/Export Settings</h2>
-            <p>You can export your current settings (censor dictionary, omit list, censor status, censor mode, etc.) into a text file that can then be imported later or used by others also using CensorCAT.</p>
-            <button type="button" id="open-settings-io" class="button">Open import / export options</button>
 
             <h2>About</h2>
             <p>CensorCAT is an open-source censoring extension for Mozilla Firefox, developed by obviouslyweb.</p>
-
             <a class="button" href="https://github.com/obviouslyweb/censorcat">Visit GitHub Repository</a>
 
+            <section class="card">
+                <h2>Import/Export Settings</h2>
+                <p>You can export your current settings (censor dictionary, omit list, censor status, censor mode, etc.) into a text file that can then be imported later or used by others also using CensorCAT.</p>
+                <button type="button" id="open-settings-io" class="button">Open import / export options</button>
+            </section>
+
+            <section class="card">
+                <div class="side-view">
+                    <h2>Enable Dev Features</h2>
+                    <label class="switch">
+                        <input id="dev-toggle" type="checkbox">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <p>Enable additional features and tools for developers and advanced users. Not recommended for regular users!</p>
+            </section>
+
             <section class="card dev-card">
-                <h2>[DEBUG] Local Storage</h2>
+                <h2>Local Storage</h2>
                 <p>Live update of local storage.</p>
                 <button id="dev-reset-defaults" type="button">Reset from defaults.js</button>
                 <pre id="dev-storage-data">{}</pre>
