@@ -101,7 +101,12 @@ function setStatus(statusType, heading, message, showPendingNotice = false) {
     const focusEl = document.querySelector(".home-status-focus");
     const messageEl = document.querySelector(".home-status-msg");
     if (!focusEl || !messageEl) return;
-    focusEl.innerHTML = `Censoring <span class="home-status-value status-${statusType}">${String(heading || "").toUpperCase()}</span>`;
+    focusEl.replaceChildren();
+    focusEl.appendChild(document.createTextNode("Censoring "));
+    const headingSpan = document.createElement("span");
+    headingSpan.className = `home-status-value status-${statusType}`;
+    headingSpan.textContent = String(heading || "").toUpperCase();
+    focusEl.appendChild(headingSpan);
     messageEl.textContent = String(message || "");
     if (showPendingNotice) {
         messageEl.appendChild(document.createTextNode(" "));
@@ -220,7 +225,12 @@ function setWordDetails() {
     const count = Array.isArray(uiSettings.censoredPhrases) ? uiSettings.censoredPhrases.length : 0;
     const wordsStatusElement = document.getElementById("words-status");
     if (wordsStatusElement) {
-        wordsStatusElement.innerHTML = `Currently censoring <strong>${count}</strong> words/phrases.`;
+        wordsStatusElement.replaceChildren();
+        wordsStatusElement.appendChild(document.createTextNode("Currently censoring "));
+        const strong = document.createElement("strong");
+        strong.textContent = String(count);
+        wordsStatusElement.appendChild(strong);
+        wordsStatusElement.appendChild(document.createTextNode(" words/phrases."));
     }
 
     const wordListEl = document.getElementById("word-list");
@@ -316,7 +326,14 @@ function setOmitDetails() {
 
     const sites = Array.isArray(uiSettings.ignoredSites) ? uiSettings.ignoredSites : [];
     if (omitStatusEl) {
-        omitStatusEl.innerHTML = `Currently omitting <strong>${sites.length}</strong> site${sites.length === 1 ? "" : "s"}.`;
+        omitStatusEl.replaceChildren();
+        omitStatusEl.appendChild(document.createTextNode("Currently omitting "));
+        const strong = document.createElement("strong");
+        strong.textContent = String(sites.length);
+        omitStatusEl.appendChild(strong);
+        omitStatusEl.appendChild(
+            document.createTextNode(` site${sites.length === 1 ? "" : "s"}.`)
+        );
     }
     sites.forEach((entry, index) => {
         const [site, wholeDomain] = Array.isArray(entry) && entry.length >= 2
@@ -1020,7 +1037,11 @@ function setAboutVersion() {
         // leave unknown
     }
 
-    el.innerHTML = `<strong>Version:</strong> v${currentVersion}`;
+    el.replaceChildren();
+    const versionLabel = document.createElement("strong");
+    versionLabel.textContent = "Version:";
+    el.appendChild(versionLabel);
+    el.appendChild(document.createTextNode(` v${currentVersion}`));
 }
 
 // ----------------------
