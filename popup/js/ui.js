@@ -389,22 +389,86 @@ function setOmitDetails() {
 //  Setting changes detection
 // ----------------------------
 
-// Return JSON string of normalized settings for comparison
-function getSettingsSignature(settings) {
-    const n = normalizeSettings(settings);
-    return JSON.stringify({
-        disableCensor: n.disableCensor,
-        censorMode: n.censorMode,
-        censorChar: n.censorChar,
-        censorSub: n.censorSub,
-        censoredPhrases: n.censoredPhrases,
-        ignoredSites: n.ignoredSites
-    });
+function buildMultiset(arr, keyFn) {
+    const map = new Map();
+    if (!Array.isArray(arr)) {
+        return map;
+    }
+    for (const item of arr) {
+        const k = keyFn(item);
+        map.set(k, (map.get(k) || 0) + 1);
+    }
+    return map;
 }
 
-// Return true if page settings differ from current UI settings
+function isMultisetSubmultiset(sub, sup) {
+    for (const [k, count] of sub) {
+        if ((sup.get(k) || 0) < count) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function isStrictMultisetSuperset(sub, sup) {
+    return isMultisetSubmultiset(sub, sup) && sup.size > 0
+        && [...sup.entries()].some(([k, v]) => v > (sub.get(k) || 0));
+}
+
+function phraseEntryKey(entry) {
+    const [word, caseSensitive, isRegex] = Array.isArray(entry)
+        ? entry
+        : [String(entry || ""), false, false];
+    return JSON.stringify([String(word), Boolean(caseSensitive), Boolean(isRegex)]);
+}
+
+function omitEntryKey(entry) {
+    const [site, wholeDomain] = Array.isArray(entry)
+        ? entry
+        : [String(entry || ""), false];
+    return JSON.stringify([String(site), Boolean(wholeDomain)]);
+}
+
+function coreSettingsDiffer(page, ui) {
+    return page.disableCensor !== ui.disableCensor
+        || page.censorMode !== ui.censorMode
+        || page.censorChar !== ui.censorChar
+        || page.censorSub !== ui.censorSub;
+}
+
+// Phrase list
+// show reload notice when words are removed
+function phraseRemovalsTriggerPending(page, ui) {
+    const p = buildMultiset(page.censoredPhrases, phraseEntryKey);
+    const u = buildMultiset(ui.censoredPhrases, phraseEntryKey);
+    return !isMultisetSubmultiset(p, u);
+}
+
+// Omit list
+// show reload notice when entries are added
+function omitAdditionsTriggerPending(page, ui) {
+    const p = buildMultiset(page.ignoredSites, omitEntryKey);
+    const u = buildMultiset(ui.ignoredSites, omitEntryKey);
+    return isStrictMultisetSuperset(p, u);
+}
+
+// Return true when the tab's snapshot settings warrant the "reload to apply" notice
 function shouldShowPendingNotice(pageSettings) {
-    return pageSettings && getSettingsSignature(pageSettings) !== getSettingsSignature(uiSettings);
+    if (!pageSettings) {
+        return false;
+    }
+    const page = normalizeSettings(pageSettings);
+    const ui = uiSettings;
+    if (coreSettingsDiffer(page, ui)) {
+        return true;
+    }
+    if (phraseRemovalsTriggerPending(page, ui)) {
+        return true;
+    }
+    if (omitAdditionsTriggerPending(page, ui)) {
+        return true;
+    }
+    return false;
 }
 
 // ----------------------------

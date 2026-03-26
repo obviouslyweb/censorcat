@@ -574,7 +574,6 @@ footer {
     }
 }
 
-/* Input styles for censor and omit list */
 .input {
     color: white;
     background: transparent;
@@ -584,7 +583,6 @@ footer {
     font-family: "Calibri", "Segoe UI", Arial, sans-serif;
 }
 
-/* Inline error/warning notifications */
 .ui-alert {
     width: 100%;
     border: 2px solid rgba(255, 98, 98, 0.95);
@@ -633,7 +631,6 @@ footer {
     }
 }
 
-/* Censor word / omit site copy-on-click hover styling */
 .copy-target {
     cursor: pointer;
     transform-origin: left center;

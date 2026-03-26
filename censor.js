@@ -402,7 +402,7 @@ function checkCensor() {
             censorStatus = {
                 site: fullPath,
                 settings: settingsForPopupComparison(),
-                status: [false, "Omitted", "Censoring is disabled for this page by your settings."]
+                status: [false, "Disabled", "Censoring is disabled for this page by your settings."]
             };
             return;
         }
