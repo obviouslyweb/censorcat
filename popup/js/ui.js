@@ -22,7 +22,7 @@ async function persistSettings(settings) {
     try {
         uiSettings = await saveSettings(settings);
     } catch {
-        alert("Unable to save settings to local storage.");
+        showUiAlert("Unable to save settings to local storage.", "error");
         uiSettings = normalizeSettings(settings);
     }
     renderDevStorage(uiSettings);
@@ -39,6 +39,7 @@ const NAV_IDS = ["nav-home", "nav-words", "nav-omit", "nav-info"];
 
 // Hide all views and clear active nav state
 function hideAllPages() {
+    clearUiAlert();
     VIEW_IDS.forEach((id) => document.querySelector(`#${id}`)?.classList.add("hidden"));
     NAV_IDS.forEach((id) => document.querySelector(`#${id}`)?.classList.remove("active"));
 }
@@ -127,6 +128,62 @@ function buildStatus(status) {
     return { statusType, heading, message };
 }
 
+function showUiAlert(message, severity = "info") {
+    const el = document.querySelector("#ui-alert");
+    if (!el) return;
+
+    const text = String(message || "");
+    el.textContent = text;
+    el.classList.remove("hidden");
+    el.classList.remove("error", "warning", "info");
+    if (severity === "error" || severity === "warning" || severity === "info") {
+        el.classList.add(severity);
+    }
+
+    // Click-to-dismiss
+    el.onclick = () => clearUiAlert();
+}
+
+function clearUiAlert() {
+    const el = document.querySelector("#ui-alert");
+    if (!el) return;
+
+    el.classList.add("hidden");
+    el.classList.remove("error", "warning", "info");
+    el.onclick = null;
+}
+
+async function copyTextToClipboard(text) {
+    const value = String(text ?? "");
+    if (!value) return false;
+
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(value);
+            return true;
+        }
+    } catch {
+        // fall back to execCommand
+    }
+
+    try {
+        const textarea = document.createElement("textarea");
+        textarea.value = value;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        textarea.style.top = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const ok = document.execCommand && document.execCommand("copy");
+        document.body.removeChild(textarea);
+        return Boolean(ok);
+    } catch {
+        return false;
+    }
+}
+
 // -----------------------------------
 //    List UI (for words & omit tabs)
 // -----------------------------------
@@ -164,8 +221,30 @@ function setWordDetails() {
         item.className = "scroll-item";
 
         const p = document.createElement("p");
-        p.className = "scroll-text";
+        p.className = "scroll-text copy-target";
         p.textContent = isRegex ? phraseText : maskPhraseForDisplay(phraseText);
+        p.dataset.copyValue = phraseText;
+        p.tabIndex = 0;
+        p.setAttribute("role", "button");
+
+        p.addEventListener("click", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            clearUiAlert();
+            const ok = await copyTextToClipboard(p.dataset.copyValue);
+            if (ok) {
+                showUiAlert("Copied uncensored word/phrase to clipboard.", "info");
+            } else {
+                showUiAlert("Could not copy to clipboard.", "error");
+            }
+        });
+
+        p.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                p.click();
+            }
+        });
         item.appendChild(p);
 
         const phraseRight = document.createElement("div");
@@ -230,7 +309,7 @@ function setOmitDetails() {
         item.className = "scroll-item";
 
         const p = document.createElement("p");
-        p.className = "scroll-text";
+        p.className = "scroll-text copy-target";
         p.textContent = site;
         if (wholeDomain) {
             const domainSpan = document.createElement("span");
@@ -238,6 +317,30 @@ function setOmitDetails() {
             domainSpan.textContent = " (domain)";
             p.appendChild(domainSpan);
         }
+
+        const clipboardLink = site.includes("://") ? site : `https://${site}`;
+        p.dataset.copyValue = clipboardLink;
+        p.tabIndex = 0;
+        p.setAttribute("role", "button");
+
+        p.addEventListener("click", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            clearUiAlert();
+            const ok = await copyTextToClipboard(p.dataset.copyValue);
+            if (ok) {
+                showUiAlert("Omit link copied to clipboard.", "info");
+            } else {
+                showUiAlert("Could not copy to clipboard.", "error");
+            }
+        });
+
+        p.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                p.click();
+            }
+        });
         item.appendChild(p);
 
         const itemRight = document.createElement("div");
@@ -422,7 +525,7 @@ async function refreshStatus() {
     if (isBrowserProtectedUrl(activeTab.url)) {
         statusSyncRetryCount = 0;
         applyIfCurrent(() => {
-            setStatus("protected", "Protected", "This page is protected by the browser.");
+            setStatus("protected", "Protected", "This page is protected by the browser and cannot be censored.");
         });
         return;
     }
@@ -478,7 +581,10 @@ function wireSettingsIoPage() {
     btn.addEventListener("click", () => {
         const url = browser.runtime.getURL("popup/export-import.html");
         browser.tabs.create({ url }).catch(() => {
-            alert("Could not open the import/export page. Check that the extension is allowed to open tabs.");
+            showUiAlert(
+                "Could not open the import/export page. Check that the extension is allowed to open tabs.",
+                "error"
+            );
         });
     });
 }
@@ -504,7 +610,7 @@ function wireDevFeaturesToggle() {
             await browser.storage.local.set({ [DEV_UI_STORAGE_KEY]: on });
         } catch {
             toggleEl.checked = !on;
-            alert("Could not save dev features preference.");
+            showUiAlert("Could not save dev features preference.", "error");
             return;
         }
         applyDevFeaturesVisibility(on);
@@ -574,19 +680,68 @@ function wireSettingsControls() {
     }
 }
 
-// Normalize URL or host/path string to hostname or hostname+path for omit list
-function normalizeOmitSiteInput(inputValue) {
+// Validate IPv4 addresses
+// - Returns true if the host is a valid IPv4 address
+function isValidIPv4(host) {
+    if (typeof host !== "string") return false;
+    const parts = host.split(".");
+    if (parts.length !== 4) return false;
+    return parts.every((part) => {
+        if (!/^\d+$/.test(part)) return false;
+        const n = Number(part);
+        return Number.isInteger(n) && n >= 0 && n <= 255;
+    });
+}
+
+// Validate hostnames: must contain at least one dot (except localhost)
+// - Returns true if the host is a valid hostname
+function isValidHostname(host) {
+    if (typeof host !== "string") return false;
+    const h = host.toLowerCase();
+    if (!h) return false;
+    if (h === "localhost") return true;
+    if (isValidIPv4(h)) return true;
+    if (!h.includes(".")) return false;
+    if (h.length > 253) return false;
+    if (!/^[a-z0-9.-]+$/.test(h)) return false;
+    if (h.startsWith(".") || h.endsWith(".")) return false;
+    if (h.includes("..")) return false;
+    const labels = h.split(".");
+    return labels.every((label) => {
+        if (!label || label.length > 63) return false;
+        if (label.startsWith("-") || label.endsWith("-")) return false;
+        return /^[a-z0-9-]+$/.test(label);
+    });
+}
+
+// Normalize URL/host/path input to a string used by censor.js ignore matching
+// - If wholeDomain is true: return only `hostname`
+// - Otherwise: return `hostname + pathname` (without query/hash)
+function normalizeOmitSiteInput(inputValue, wholeDomain) {
     const raw = String(inputValue || "").trim();
     if (!raw) return "";
+    if (/\s/.test(raw)) return "";
+
+    // Handle explicit http(s) URLs.
     if (/^https?:\/\//i.test(raw)) {
         try {
             const p = new URL(raw);
             return `${p.hostname}${p.pathname === "/" ? "" : p.pathname}`;
         } catch {
-            return raw;
+            return "";
         }
     }
-    return raw.replace(/^\/*/, "");
+
+    // Handle inputs without scheme by parsing as if https://<raw>.
+    // This supports entries like `example.com/some/path`.
+    try {
+        const p = new URL(`https://${raw.replace(/^\/*/, "")}`);
+        if (!isValidHostname(p.hostname)) return "";
+        if (wholeDomain) return p.hostname;
+        return `${p.hostname}${p.pathname === "/" ? "" : p.pathname}`;
+    } catch {
+        return "";
+    }
 }
 
 // Wire omit-current-site button and omit form submit to add sites to ignoredSites
@@ -628,16 +783,37 @@ function wireAddOmitForm() {
 
     submitBtn.addEventListener("click", async () => {
         const raw = (addPhraseInput.value || "").trim();
-        const site = normalizeOmitSiteInput(raw);
+        clearUiAlert();
+        const rawLower = raw.toLowerCase();
+        const wholeDomain = Boolean(domainIndicator && domainIndicator.checked);
+        const site = normalizeOmitSiteInput(raw, wholeDomain);
         if (!site) {
-            alert("Please enter a URL or site to omit.");
+            if (rawLower.includes("about:")) {
+                showUiAlert(
+                    "It looks like you're trying to omit a browser settings page. These pages are already protected by the browser from censoring by default.",
+                    "error"
+                );
+                return;
+            }
+            if (rawLower.includes("/C:/")) {
+                showUiAlert(
+                    "It looks like you're trying to omit a system file. These files are already protected by the system and cannot be censored by CensorCAT.",
+                    "error"
+                );
+                return;
+            }
+            showUiAlert(
+                wholeDomain
+                    ? "Please enter a valid domain to omit (example: wikipedia.org)."
+                    : "Please enter a valid URL or domain to omit (example: wikipedia.org or wikipedia.org/wiki/Page).",
+                "error"
+            );
             return;
         }
-        const wholeDomain = Boolean(domainIndicator && domainIndicator.checked);
         const list = Array.isArray(uiSettings.ignoredSites) ? uiSettings.ignoredSites : [];
         const alreadyExists = list.some(([s, w]) => s === site && w === wholeDomain);
         if (alreadyExists) {
-            alert("This site is already in the omit list with the same options.");
+            showUiAlert("This site is already in the omit list with the same options.", "warning");
             return;
         }
         const entry = [site, wholeDomain];
@@ -670,12 +846,13 @@ function wireAddCensorForm() {
 
     submitBtn.addEventListener("click", async () => {
         const phrase = (addPhraseInput.value || "").trim();
+        clearUiAlert();
         if (phrase.length === 0) {
-            alert("Please enter a word or phrase to censor.");
+            showUiAlert("Please enter a word or phrase to censor.", "error");
             return;
         }
         if (caseIndicator.checked && regexIndicator.checked) {
-            alert("Cannot use both case-sensitive and REGEX at the same time. Please uncheck one.");
+            showUiAlert("Cannot use both case-sensitive and REGEX at the same time. Please uncheck one.", "error");
             return;
         }
 
@@ -689,14 +866,14 @@ function wireAddCensorForm() {
                 const detail = err && typeof err.message === "string" && err.message.length > 0
                     ? err.message
                     : "The pattern could not be compiled.";
-                alert(`Invalid regular expression: ${detail}`);
+                showUiAlert(`Invalid regular expression: ${detail}`, "error");
                 return;
             }
         }
         const list = Array.isArray(uiSettings.censoredPhrases) ? uiSettings.censoredPhrases : [];
         const alreadyExists = list.some(([p, c, r]) => p === phrase && c === caseSensitive && r === isRegex);
         if (alreadyExists) {
-            alert("This phrase is already in the censor list with the same options.");
+            showUiAlert("This phrase is already in the censor list with the same options.", "warning");
             return;
         }
 
@@ -719,6 +896,25 @@ function wireAddCensorForm() {
 function renderDevStorage(settings) {
     const el = document.querySelector("#dev-storage-data");
     if (el) el.textContent = JSON.stringify(settings, null, 2);
+}
+
+function setAboutVersion() {
+    const el = document.querySelector("#about-version");
+    if (!el) {
+        return;
+    }
+
+    let currentVersion = "Unknown";
+    try {
+        const manifest = browser.runtime && browser.runtime.getManifest ? browser.runtime.getManifest() : null;
+        if (manifest && typeof manifest.version === "string" && manifest.version.length > 0) {
+            currentVersion = manifest.version;
+        }
+    } catch {
+        // leave unknown
+    }
+
+    el.innerHTML = `<strong>Version:</strong> v${currentVersion}`;
 }
 
 
@@ -752,6 +948,7 @@ async function initializeUi() {
     wireSettingsIoPage();
     wireDevFeaturesToggle();
     wireDevControls();
+    setAboutVersion();
     refreshStatus();
 }
 

@@ -23,6 +23,7 @@
     </header>
 
     <!-- Page content -->
+    <div id="ui-alert" class="ui-alert hidden" role="alert" aria-live="polite"></div>
     <div class="core">
 
         <!-- HOME SEGMENT -->
@@ -60,7 +61,7 @@
                         <input type="text" id="char" maxlength="1">
                     </div>
                     <div id="sub-row">
-                        <p>Replace censored elements with this phrase:</p>
+                        <p>Replacement phrase:</p>
                         <input type="text" id="censor-phrase">
                     </div>
                 </div>
@@ -96,7 +97,7 @@
 
             <section class="card">
                 <h2>Add to censor</h2>
-                <input type="text" id="add-phrase" placeholder="Type what you want to remove...">
+                <input type="text" id="add-phrase" class="input" placeholder="Type what you want to remove...">
                 <div class="card-question" id="add-censor-op1">
                     <div class="label-container">
                         <input class="label-core"  name="case-indicator" type="checkbox" id="case-indicator">
@@ -143,7 +144,7 @@
                     <h2>Add to omit list</h2>
                     <button type="button" id="omit-current-site">Use current page</button>
                 </div>
-                <input type="text" id="omit-add-phrase" placeholder="Type URL to omit...">
+                <input type="text" id="omit-add-phrase" class="input" placeholder="Type URL to omit...">
                 <div class="card-question" id="omit-add-op1">
                     <div class="label-container">
                         <input name="domain-indicator" type="checkbox" id="domain-indicator">
@@ -161,8 +162,10 @@
 
             <h2>About</h2>
             <p>CensorCAT is an open-source censoring extension for Mozilla Firefox, developed by obviouslyweb.</p>
+            <p id="about-version"></p>
+            <p>Should you encounter any issues, please get in contact with us via the project's repository.</p>
             <a class="button" href="https://github.com/obviouslyweb/censorcat">Visit GitHub Repository</a>
-
+            
             <section class="card">
                 <h2>Import/Export Settings</h2>
                 <p>You can export your current settings (censor dictionary, omit list, censor status, censor mode, etc.) into a text file that can then be imported later or used by others also using CensorCAT.</p>

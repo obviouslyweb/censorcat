@@ -1,8 +1,14 @@
 /* eslint-disable no-undef */
 
-const EXPORT_HEADER = "CENSORCAT_EXPORT";
+// Export/import defaults
+// Export file header format:
+//   CENSORCAT_EXPORT_V<extensionVersion>\n
+// Backwards compatibility:
+//   Older exports may only use `CENSORCAT_EXPORT_V` (no version suffix).
+const EXPORT_HEADER_PREFIX = "CENSORCAT_EXPORT_V";
 const EXPORT_FILENAME_DEFAULT = "censorcat-export.txt";
 
+// Encodes the UTF-8 string to base64 for export
 function utf8ToBase64(str) {
     const bytes = new TextEncoder().encode(str);
     let binary = "";
@@ -12,6 +18,7 @@ function utf8ToBase64(str) {
     return btoa(binary);
 }
 
+// Decodes the base64 string to UTF-8 for import
 function base64ToUtf8(b64) {
     const binary = atob(b64);
     const bytes = new Uint8Array(binary.length);
@@ -21,6 +28,7 @@ function base64ToUtf8(b64) {
     return new TextDecoder().decode(bytes);
 }
 
+// Validates the regex pattern for import
 function isValidRegexPattern(pattern, caseSensitive) {
     const flags = caseSensitive ? "g" : "gi";
     try {
@@ -31,6 +39,7 @@ function isValidRegexPattern(pattern, caseSensitive) {
     }
 }
 
+// Validates the shape of the imported settings
 function validateImportedSettingsShape(obj) {
     // There's probably a much better way to do this, but this'll work for now
     if (!obj || typeof obj !== "object") {
@@ -79,43 +88,67 @@ function validateImportedSettingsShape(obj) {
     return true;
 }
 
+// Decodes the import file text & imports the settings
 function decodeImportFile(text) {
-    // ditto with the above
     const raw = String(text || "").replace(/^\uFEFF/, "").trim();
-    if (!raw.startsWith(EXPORT_HEADER)) {
-        return { ok: false };
+    if (!raw) {
+        return { ok: false, exportVersion: null };
     }
-    const afterHeader = raw.slice(EXPORT_HEADER.length).trim();
-    if (!afterHeader) {
-        return { ok: false };
+
+    const lines = raw.split(/\r?\n/);
+    const headerLine = String(lines[0] || "").trim();
+    if (!headerLine.startsWith(EXPORT_HEADER_PREFIX)) {
+        return { ok: false, exportVersion: null };
     }
+
+    const exportVersionRaw = headerLine.slice(EXPORT_HEADER_PREFIX.length).trim();
+    const exportVersion = exportVersionRaw.length > 0 ? exportVersionRaw : null;
+
+    const base64Part = lines.slice(1).join("\n").trim();
+    if (!base64Part) {
+        return { ok: false, exportVersion };
+    }
+
     let jsonStr;
     try {
-        jsonStr = base64ToUtf8(afterHeader);
+        jsonStr = base64ToUtf8(base64Part);
     } catch {
-        return { ok: false };
+        return { ok: false, exportVersion };
     }
     let obj;
     try {
         obj = JSON.parse(jsonStr);
     } catch {
-        return { ok: false };
+        return { ok: false, exportVersion };
     }
     if (!obj || typeof obj !== "object" || obj.v !== 1) {
-        return { ok: false };
+        return { ok: false, exportVersion };
     }
     const rest = { ...obj };
     delete rest.v;
     if (!validateImportedSettingsShape(rest)) {
-        return { ok: false };
+        return { ok: false, exportVersion };
     }
-    return { ok: true, settings: normalizeSettings(rest) };
+    return { ok: true, settings: normalizeSettings(rest), exportVersion };
 }
 
+// Builds the export file body
 function buildExportFileBody(settings) {
     const normalized = normalizeSettings(settings);
     const envelope = { v: 1, ...normalized };
-    return `${EXPORT_HEADER}\n${utf8ToBase64(JSON.stringify(envelope))}`;
+
+    let currentVersion = "unknown";
+    try {
+        const manifest = browser.runtime && browser.runtime.getManifest ? browser.runtime.getManifest() : null;
+        if (manifest && typeof manifest.version === "string" && manifest.version.length > 0) {
+            currentVersion = manifest.version;
+        }
+    } catch {
+        // leave unknown
+    }
+
+    const header = `${EXPORT_HEADER_PREFIX}${currentVersion}`;
+    return `${header}\n${utf8ToBase64(JSON.stringify(envelope))}`;
 }
 
 function scheduleRevokeBlobUrl(downloadId, blobUrl) {
@@ -145,6 +178,7 @@ function scheduleRevokeBlobUrl(downloadId, blobUrl) {
     }, 300_000);
 }
 
+// Downloads the export file to the user's device
 async function downloadExportFile(body, filename) {
     if (typeof body !== "string") {
         throw new Error("Invalid export payload.");
@@ -153,6 +187,7 @@ async function downloadExportFile(body, filename) {
         ? filename
         : "censorcat-settings.txt";
 
+    // Create the blob URL for the export file & attempt to download it
     let blobUrl = null;
     try {
         const blob = new Blob([body], { type: "text/plain;charset=utf-8" });
@@ -176,6 +211,7 @@ async function downloadExportFile(body, filename) {
     }
 }
 
+// Sets the status of the export/import process
 function setIoStatus(el, text, isError) {
     if (!el) {
         return;
@@ -184,27 +220,32 @@ function setIoStatus(el, text, isError) {
     el.classList.toggle("is-error", Boolean(isError));
 }
 
+// Initializes the export/import page
 function initExportImportPage() {
+    // Get the export/import buttons and status elements
     const exportBtn = document.getElementById("export-settings");
     const exportStatus = document.getElementById("export-status");
     const input = document.getElementById("import-file");
     const importBtn = document.getElementById("import-choose");
     const importStatus = document.getElementById("import-status");
 
+    // If any of the elements are not found, return
     if (!exportBtn || !exportStatus || !input || !importBtn || !importStatus) {
         return;
     }
 
+    // If any of the functions are not found, set the status to an error
     if (
         typeof buildExportFileBody !== "function"
         || typeof decodeImportFile !== "function"
         || typeof loadSettings !== "function"
         || typeof saveSettings !== "function"
     ) {
-        setIoStatus(exportStatus, "Scripts failed to load. Please reload this tab to try again.", true);
+        setIoStatus(exportStatus, "We're sorry, but the scripts failed to load. Please reload this tab to try again. If you see this error again, please get in contact with us!", true);
         return;
     }
 
+    // Listener for export button
     exportBtn.addEventListener("click", () => {
         void (async () => {
             setIoStatus(exportStatus, "");
@@ -220,12 +261,14 @@ function initExportImportPage() {
         })();
     });
 
+    // Listener for import button
     importBtn.addEventListener("click", () => {
         setIoStatus(importStatus, "");
         input.value = "";
         input.click();
     });
 
+    // Listener for file input change
     input.addEventListener("change", () => {
         const file = input.files && input.files[0];
         if (!file) {
@@ -238,17 +281,40 @@ function initExportImportPage() {
                     const text = typeof reader.result === "string" ? reader.result : "";
                     const parsed = decodeImportFile(text);
                     if (!parsed.ok) {
-                        setIoStatus(
-                            importStatus,
-                            "This file could not be imported because it does not match the expected template.",
-                            true
-                        );
+                        let currentVersion = "unknown";
+                        try {
+                            const manifest = browser.runtime && browser.runtime.getManifest ? browser.runtime.getManifest() : null;
+                            if (manifest && typeof manifest.version === "string" && manifest.version.length > 0) {
+                                currentVersion = manifest.version;
+                            }
+                        } catch {
+                            // leave unknown
+                        }
+
+                        const fileVersion = parsed.exportVersion;
+                        const isVersionMismatch = Boolean(fileVersion) && fileVersion !== currentVersion;
+
+                        if (isVersionMismatch) {
+                            setIoStatus(
+                                importStatus,
+                                "The file you chose to import is from a different version of CensorCAT that cannot be imported into this new version.\n\n" +
+                                    `Your current version: ${currentVersion}\n` +
+                                    `Version of file export: ${fileVersion}`,
+                                true
+                            );
+                        } else {
+                            setIoStatus(
+                                importStatus,
+                                "This file could not be imported because it does not match the expected template.",
+                                true
+                            );
+                        }
                         return;
                     }
                     await saveSettings(parsed.settings);
                     setIoStatus(
                         importStatus,
-                        "Settings imported successfully. Reload open tabs to use the new settings. You can safely close this tab.",
+                        "Settings imported successfully. You can safely close this tab.",
                         false
                     );
                 } catch (err) {

@@ -9,8 +9,7 @@ const DISABLE_CENSOR = false;
 const CENSORED_PHRASES = [
     // Format: [ "phrase", case-sensitive, regex ]
     [ "god", false, false ],
-    [ "\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\b", false, true ], // Email regex demo
-    [ "Roblox", true, false ] // Case-sensitive Roblox demo
+    [ "\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\b", false, true ] // Hide emails (regex)
 ];
 
 // Default replacement char & substitute phrase
@@ -26,5 +25,5 @@ const CENSOR_MODE = 0;
 // omit list for sites to ignore
 const IGNORED_SITES = [
     // Format: [ "site.url", censor all pages under domain ]
-    [ "wikipedia.org", true ]
+    // None at start-up
 ];

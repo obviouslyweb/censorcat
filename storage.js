@@ -1,6 +1,10 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 
+// ------------------------------
+//   Get info from localstorage
+// ------------------------------
+
 // localstorage definition key
 const SETTINGS_STORAGE_KEY = "censorcatSettings";
 
