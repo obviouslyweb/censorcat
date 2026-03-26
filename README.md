@@ -1,18 +1,27 @@
 ![CensorCAT logo](icons/censorcat-logo.png)
 
 # CensorCAT - *Censor Curation And Text-filtering tool*
-Dynamic censoring extension for the Firefox Browser. Currently in active development.
 
-## Features (v0.9.2)
-* Censors defined phrases and saves settings to `browser.storage.local`
-* Censors words/phrases (including regex) with per-entry case sensitivity
-* The ability to add and remove censored phrases directly inside the UI
-* The ability to omit certain webpages or domians from censoring
-* A global disable censoring toggle
-* Supports 4 censor modes, including substitute phrase mode
-* Export and import omit lists & censor dictionaries
+A dynamic and lightweight censoring extension for Firefox. Censor matching phrases on web pages using rules you define, and omit websites that you want to see unfiltered. Curate the web how you want to see it.
+
+## Features
+
+- Censor words or phrases (plain text or regex), with optional case sensitivity
+- Four censor modes, including substitute-phrase mode
+- Omit specific URLs or whole domains
+- Disable censoring at any time with a global toggle
+- Manage censored phrases and omitted webpages directly in the extension popup
+- Export and import your censor and omit lists to save and share with others
+
+## Privacy & data usage
+
+CensorCAT does **not** collect analytics, run accounts, or send your data to any server. Your censor list, omit list, and other settings stay on your device in Firefox’s local extension storage (`browser.storage.local`).
+
+Censoring runs in the page in your browser; nothing is uploaded to the developers or third parties. Export/import only read or write files that you select.
+
+## Issues or bugs?
+
+Please open issues on this repository for bugs you encounter. Suggestions for enhancements are welcome.
 
 ## Information
-CensorCAT is being developed in JavaScript with the usage of Firefox WebExtensionsAPI. This is my first time working on something like this, so feedback and suggestions in issues would be greatly appreciated!
-
-CensorCAT logo created by me in Adobe Illustrator. Please do not use without permission.
+CensorCAT and its associated logo and icon were created by obviouslyweb. Please do not use logos, icons, or similar branding without permission.

@@ -3,8 +3,7 @@
 // Export/import defaults
 // Export file header format:
 //   CENSORCAT_EXPORT_V<extensionVersion>\n
-// Backwards compatibility:
-//   Older exports may only use `CENSORCAT_EXPORT_V` (no version suffix).
+
 const EXPORT_HEADER_PREFIX = "CENSORCAT_EXPORT_V";
 const EXPORT_FILENAME_DEFAULT = "censorcat-export.txt";
 

@@ -128,6 +128,7 @@ function buildStatus(status) {
     return { statusType, heading, message };
 }
 
+// Create UI alerts at the top of the content
 function showUiAlert(message, severity = "info") {
     const el = document.querySelector("#ui-alert");
     if (!el) return;
@@ -153,6 +154,7 @@ function showUiAlert(message, severity = "info") {
     };
 }
 
+// Removes UI alerts
 function clearUiAlert() {
     const el = document.querySelector("#ui-alert");
     if (!el) return;
@@ -168,6 +170,7 @@ function clearUiAlert() {
     el.onkeydown = null;
 }
 
+// Copies contents of items to clipboard
 async function copyTextToClipboard(text) {
     const value = String(text ?? "");
     if (!value) return false;
@@ -1019,7 +1022,6 @@ function setAboutVersion() {
 
     el.innerHTML = `<strong>Version:</strong> v${currentVersion}`;
 }
-
 
 // ----------------------
 //     INITILIZATION
