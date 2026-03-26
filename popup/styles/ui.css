@@ -392,11 +392,20 @@ header {
             align-self: flex-end;
             width: 50px;
             height: 24px;
+            cursor: pointer;
 
             input {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
                 opacity: 0;
-                width: 0;
-                height: 0;
+                cursor: pointer;
+                z-index: 2;
+                appearance: none;
+                -moz-appearance: none;
 
                 &:checked + .slider {
                     border-color: var(--accent-disabled);
@@ -409,8 +418,18 @@ header {
                     }
                 }
 
-                &:focus + .slider {
-                    box-shadow: 0 0 1px var(--accent-disabled);
+                &:focus {
+                    outline: none;
+                }
+
+                &:focus-visible + .slider {
+                    box-shadow:
+                        0 0 0 2px var(--bg),
+                        0 0 0 4px color-mix(in srgb, var(--accent-protected) 85%, white);
+                }
+
+                &:disabled {
+                    cursor: not-allowed;
                 }
 
                 &:disabled + .slider {
@@ -430,6 +449,7 @@ header {
                 left: 0;
                 right: 0;
                 bottom: 0;
+                z-index: 1;
                 border: 3px solid white;
                 background-color: transparent;
                 -webkit-transition: 0.4s;
@@ -561,6 +581,7 @@ footer {
     border: none;
     padding-bottom: calc(var(--padding) * 0.25);
     border-bottom: 1px solid white;
+    font-family: "Calibri", "Segoe UI", Arial, sans-serif;
 }
 
 /* Inline error/warning notifications */
@@ -595,9 +616,20 @@ footer {
         background: rgba(98, 203, 255, 0.12);
     }
 
-    &:hover, &:focus {
+    &:hover {
         transform: scale(1.05);
         opacity: 75%;
+    }
+
+    &:focus {
+        outline: none;
+    }
+
+    &:focus-visible {
+        transform: scale(1.05);
+        opacity: 75%;
+        outline: 2px solid color-mix(in srgb, var(--accent-protected) 80%, white);
+        outline-offset: 2px;
     }
 }
 

@@ -140,17 +140,32 @@ function showUiAlert(message, severity = "info") {
         el.classList.add(severity);
     }
 
-    // Click-to-dismiss
-    el.onclick = () => clearUiAlert();
+    el.tabIndex = 0;
+
+    const dismiss = () => clearUiAlert();
+
+    el.onclick = dismiss;
+    el.onkeydown = (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            dismiss();
+        }
+    };
 }
 
 function clearUiAlert() {
     const el = document.querySelector("#ui-alert");
     if (!el) return;
 
+    if (document.activeElement === el) {
+        el.blur();
+    }
+
     el.classList.add("hidden");
     el.classList.remove("error", "warning", "info");
+    el.tabIndex = -1;
     el.onclick = null;
+    el.onkeydown = null;
 }
 
 async function copyTextToClipboard(text) {
@@ -589,6 +604,21 @@ function wireSettingsIoPage() {
     });
 }
 
+// Custom switch styling keeps a real checkbox
+function wireSwitchEnterToggle(checkbox) {
+    if (!checkbox) {
+        return;
+    }
+    checkbox.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") {
+            return;
+        }
+        event.preventDefault();
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+}
+
 // Toggle html class and checkbox so .dev-card sections use display flex vs none
 function applyDevFeaturesVisibility(enabled) {
     document.documentElement.classList.toggle("dev-features-enabled", Boolean(enabled));
@@ -615,6 +645,7 @@ function wireDevFeaturesToggle() {
         }
         applyDevFeaturesVisibility(on);
     });
+    wireSwitchEnterToggle(toggleEl);
 }
 
 // Wire reset-to-defaults button to persist defaults and refresh UI
@@ -641,6 +672,7 @@ function wireSettingsControls() {
             await persistSettings(uiSettings);
             refreshStatus();
         });
+        wireSwitchEnterToggle(toggleEl);
     }
 
     const modeInputs = Array.from(document.querySelectorAll('input[name="censor_mode"]'));
