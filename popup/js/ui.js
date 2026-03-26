@@ -822,15 +822,22 @@ function wireAddOmitForm() {
         if (!site) {
             if (rawLower.includes("about:")) {
                 showUiAlert(
-                    "It looks like you're trying to omit a browser settings page. These pages are already protected by the browser from censoring by default.",
-                    "error"
+                    "It looks like you're trying to omit a browser settings page. These pages are already protected by the browser and cannot be censored by CensorCAT.",
+                    "warning"
                 );
                 return;
             }
             if (rawLower.includes("/C:/")) {
                 showUiAlert(
                     "It looks like you're trying to omit a system file. These files are already protected by the system and cannot be censored by CensorCAT.",
-                    "error"
+                    "warning"
+                );
+                return;
+            }
+            if (rawLower.includes("moz-extension://")) {
+                showUiAlert(
+                    "It looks like you're trying to omit an extension-generated page. These pages are already protected by the browser and cannot be censored by CensorCAT.",
+                    "warning"
                 );
                 return;
             }
