@@ -25,7 +25,7 @@ Please open issues on this repository for bugs you encounter. Suggestions for en
 
 ## Legal Disclaimers
 
-*This project is licensed under the MIT License. See the LICENSE file for details. By using this code, you agree that you are solely responsible for compliance with Discord's Terms of Service and all applicable laws. **I accept no liability for misuse or damages.***
+*This project is licensed under the MIT License. See the LICENSE file for details. By using this code, you agree that you are solely responsible for compliance with all applicable laws. **I accept no liability for misuse or damages.***
 
 *CensorCAT name, logo, and icon © TheWebCon / obviouslyweb 2026. All rights reserved.*
 
