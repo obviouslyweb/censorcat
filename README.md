@@ -23,8 +23,10 @@ Censoring runs in the page in your browser; nothing is uploaded to the developer
 
 Please open issues on this repository for bugs you encounter. Suggestions for enhancements are welcome.
 
-## Information & Legal
+## Legal Disclaimers
 
-This project is released under the [MIT License](LICENSE). This lets anyone use, copy, change, merge, publish, distribute, sublicense, or sell copies of this software, including for commercial projects, as long as the same copyright notice and license text stay attached to copies or substantial portions of the code. It does **not** require that changes be shared back. The license is provided “as is,” without warranty: therefore, I am not liable for damages or issues arising from use of the software. This is a plain summary; the [full license text](LICENSE) is authoritative.
+*This project is licensed under the MIT License. See the LICENSE file for details. By using this code, you agree that you are solely responsible for compliance with Discord's Terms of Service and all applicable laws. **I accept no liability for misuse or damages.***
 
-CensorCAT and its associated logo and icon were created by obviouslyweb. Please do not use logos, icons, or similar branding without permission.
+*CensorCAT name, logo, and icon © TheWebCon / obviouslyweb 2026. All rights reserved.*
+
+*If you are a fan of Justin Bieber, you're actually safe here. Just don't look at the legal disclaimers of my Woolwav project and you'll be fine.'*
