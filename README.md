@@ -27,6 +27,6 @@ Please open issues on this repository for bugs you encounter. Suggestions for en
 
 *This project is licensed under the MIT License. See the LICENSE file for details. By using this code, you agree that you are solely responsible for compliance with all applicable laws. **I accept no liability for misuse or damages.***
 
-*CensorCAT name, logo, and icon © TheWebCon / obviouslyweb 2026. The CensorCAT logo, name, and icon may be used in forked versions of this software with the clarification that they are not owned or maintained by TheWebCon / obviouslyweb. All other uses, commercial or personal, remain prohibited without explicit written permission.*
+*CensorCAT name, logo, and icon © TheWebCon / obviouslyweb 2026. The CensorCAT logo, name, and icon may be used in forked versions of this software with the clarification that such forks are not owned or maintained by TheWebCon / obviouslyweb. All other uses, commercial or personal, remain prohibited without explicit written permission.*
 
 *If you are a fan of Justin Bieber, you're actually safe here. Just don't look at the legal disclaimers of my Woolwav project and you'll be fine.*
